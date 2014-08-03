@@ -24,10 +24,9 @@
 #include <SS_aliases.h>
 #include <SS.h>
 #include <DieTemp.h>
-#include <LCD.h>
+#include <STAT_aliases.h>
+#include <STAT.h>
 #include <SPIM_IntClock.h>
-#include <LCD_LCDPort_aliases.h>
-#include <LCD_LCDPort.h>
 #include <core_cm3_psoc5.h>
 #include <core_cm3.h>
 #include <CyDmac.h>
