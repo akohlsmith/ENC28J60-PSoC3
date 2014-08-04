@@ -53,7 +53,7 @@ unsigned int SendArpRequest(unsigned char * targetIP)
 	/* Sender IP will be the device IP */
 	memcpy(a.senderIP, deviceIP, 4);
 
-	return MACWrite((unsigned char *)&a, sizeof(a));
+	return tx_packet((unsigned char *)&a, sizeof(a));
 }
 
 /*******************************************************************************
@@ -90,7 +90,7 @@ unsigned int ReplyArpRequest(ARP *a)
 		a->opCode = htons(ARPREPLY);
 
 		/*Send the Packet!*/
-		return MACWrite((unsigned char *)a, sizeof(*a));
+		return tx_packet((unsigned char *)a, sizeof(*a));
 
 	}
 

@@ -45,7 +45,7 @@ unsigned int PingReply(ICMPhdr* ping,unsigned int len){
     ping->ip.chksum = checksum(((unsigned char*) ping) + sizeof(EtherNetII),sizeof(IPhdr) - sizeof(EtherNetII),0);
 
     /*Send it!*/
-    return(MACWrite((unsigned char*) ping, len));
+    return(tx_packet((unsigned char*) ping, len));
   }
   return FALSE;
 }
@@ -95,7 +95,7 @@ unsigned int SendPing(ipaddr_t targetIP)
     ping.ip.chksum = checksum(((unsigned char*)&ping) + sizeof(EtherNetII),sizeof(IPhdr) - sizeof(EtherNetII),0);
 
     /*Send it!*/
-    return(MACWrite( (unsigned char*)&ping, sizeof(ICMPhdr)+18 ));
+    return(tx_packet( (unsigned char*)&ping, sizeof(ICMPhdr)+18 ));
 }
 
 

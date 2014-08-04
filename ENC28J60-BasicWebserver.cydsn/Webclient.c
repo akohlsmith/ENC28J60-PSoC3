@@ -61,7 +61,7 @@ unsigned int WebClient_ProcessReply(TCPhdr* Rpacket)
 unsigned int WebClient_Send(void)
 {
 	/*Check if Link is Up*/
-	if (IsLinkUp() == 0) {
+	if (enc_link_up() == 0) {
 		return FALSE;
 	}
 
@@ -123,7 +123,7 @@ unsigned int WebClient_BrowseURL(TCPhdr* Tpacket)
 	Tpacket->chksum = checksum((unsigned char *)Tpacket->ip.source, 0x08 + 0x14 + datlen, 2);
 
 	/* Send the Query TCP Packet */
-	return(MACWrite((unsigned char *)Tpacket, sizeof(TCPhdr) + datlen));
+	return(tx_packet((unsigned char *)Tpacket, sizeof(TCPhdr) + datlen));
 }
 
 /*******************************************************************************
@@ -148,7 +148,7 @@ unsigned int WebClient_SendSYN(void)
 	TCPhdr *TCPacket = (TCPhdr *)packet;
 
 	/* Check if Link is Up */
-	if (IsLinkUp() == 0) {
+	if (enc_link_up() == 0) {
 		return FALSE;
 	}
 
@@ -193,5 +193,5 @@ unsigned int WebClient_SendSYN(void)
 	TCPacket->chksum = checksum((unsigned char *)TCPacket->ip.source, 0x08 + 0x14 + 4, 2);
 
 	/* Send the SYN */
-	return(MACWrite((unsigned char *)TCPacket, sizeof(TCPhdr) + 4));
+	return(tx_packet((unsigned char *)TCPacket, sizeof(TCPhdr) + 4));
 }

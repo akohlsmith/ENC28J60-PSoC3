@@ -240,7 +240,7 @@ int GetPacket(enum proto_types proto_filter, void *packet)
 	uint16_t type;
 
 	/* Did we get any packets? */
-	if ((len = MACRead(packet, MAXPACKETLEN))) {
+	if ((len = rx_packet(packet, MAXPACKETLEN))) {
 
 		/*Lets check if its an ARP packet.*/
 		EtherNetII *eth = (EtherNetII *)packet;
@@ -358,7 +358,7 @@ void IPstackIdle(void)
 {
 	uint8_t packet[MAXPACKETLEN];
 
-	if(! IsLinkUp()) {
+	if(! enc_link_up()) {
 		return;
 	}
 
@@ -468,7 +468,7 @@ int ackTcp(TCPhdr *tcp, uint16_t len, enum tcp_flags flags)
 	tcp->ip.chksum = checksum((unsigned char *)tcp + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), 0);
 	tcp->chksum = checksum((unsigned char *)tcp->ip.source, 0x08 + 0x14 + dlength, 2);
 
-	return MACWrite(tcp, len);
+	return tx_packet(tcp, len);
 }
 
 /*******************************************************************************
@@ -501,9 +501,9 @@ int IPstack_Start(const macaddr_t devMAC, const ipaddr_t devIP)
 	memcpy(deviceIP, devIP, sizeof(ipaddr_t));
 
 	/* Initialize SPI and the Chip's memory, PHY etc. */
-	initMAC(deviceMAC);
+	enc_init(deviceMAC);
 
-	if (! IsLinkUp()) {
+	if (! enc_link_up()) {
 		return FALSE;
 	}
 
@@ -512,7 +512,7 @@ int IPstack_Start(const macaddr_t devMAC, const ipaddr_t devIP)
 
 	/* Lets wait for the reply */
 	for (i=0; i < 0x5fff; i++) {
-		if (MACRead(&a, sizeof(a)) != 0) {
+		if (rx_packet(&a, sizeof(a)) != 0) {
 			uint16_t type, opcode;
 
 			type = ntohs(a.eth.type);

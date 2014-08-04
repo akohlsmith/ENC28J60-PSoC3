@@ -71,7 +71,7 @@ int gethostbyname_simple(const uint8_t *name, ipaddr_t *addr)
 	//(len+8) because Source IP and DestIP,which are part of the pseduoheader,are 4 bytes each.
 
 	/*Send the DNS Query packet*/
-	MACWrite(packet,len);
+	tx_packet(packet,len);
 
 	/*Now that we have sent the query,
 	  we wait for the reply,and then process it.*/

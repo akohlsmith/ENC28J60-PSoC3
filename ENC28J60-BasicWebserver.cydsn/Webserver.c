@@ -110,7 +110,7 @@ unsigned int ReplyTCP_Webserver(TCPhdr* TCPPkt,unsigned int datlen){
     TCPPkt->chksum=checksum((unsigned char*)TCPPkt->ip.source,0x08+0x14+datlen,2);
 
     /*Send the reply*/
-    return(MACWrite((unsigned char*)TCPPkt,sizeof(TCPhdr)+datlen));
+    return(tx_packet((unsigned char*)TCPPkt,sizeof(TCPhdr)+datlen));
  }
 
 /* [] END OF FILE */

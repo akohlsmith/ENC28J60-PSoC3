@@ -61,7 +61,7 @@ int UDPReply(UDPPacket* udp, uint8_t *payload, uint16_t payloadlen)
     udp->udp.chksum=checksum((unsigned char*)udp->udp.ip.source,16+payloadlen,1);
 
     /*Send the packet.*/
-    return MACWrite(udp, sizeof(UDPhdr) + payloadlen);
+    return tx_packet(udp, sizeof(UDPhdr) + payloadlen);
 }
 
 /*******************************************************************************
@@ -110,7 +110,7 @@ int UDPSend(ipaddr_t targetIP, uint16_t targetPort, uint8_t *payload, uint16_t p
     udp.udp.chksum=checksum((unsigned char*)&udp.udp.ip.source,16+payloadlen,1);
 
     /*Send the packet!*/
-    return(MACWrite((unsigned char*)&udp, sizeof(UDPhdr)+payloadlen));
+    return(tx_packet((unsigned char*)&udp, sizeof(UDPhdr)+payloadlen));
 }
 
 /*******************************************************************************

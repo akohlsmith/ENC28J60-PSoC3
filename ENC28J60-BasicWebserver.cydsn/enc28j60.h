@@ -35,7 +35,7 @@
 *   nothing.
 *
 *******************************************************************************/
-void initMAC(unsigned char* deviceMAC);
+void enc_init(const macaddr_t deviceMAC);
 
 
 /*******************************************************************************
@@ -53,7 +53,7 @@ void initMAC(unsigned char* deviceMAC);
 *   FALSE(1) - if the Packet was not successfully transmitted.
 *
 *******************************************************************************/
-unsigned char MACWrite(void *packet, uint16_t len);
+int tx_packet(void *packet, uint16_t len);
 
 /*******************************************************************************
 * Function Name: MACRead
@@ -69,7 +69,7 @@ unsigned char MACWrite(void *packet, uint16_t len);
 *   the length of the packet read into the buffer pointed to by packet.
 *
 *******************************************************************************/
-unsigned int MACRead(void *dest, uint16_t maxLen);
+int rx_packet(void *dest, uint16_t maxLen);
 
 /*******************************************************************************
 * Function Name: ReadChipRev
@@ -90,7 +90,7 @@ unsigned int MACRead(void *dest, uint16_t maxLen);
 *   See http://ww1.microchip.com/downloads/en/DeviceDoc/80349c.pdf
 *
 *******************************************************************************/
-unsigned char ReadChipRev(void);
+uint8_t enc_revision(void);
 
 /*******************************************************************************
 * Function Name: IsLinkUp
@@ -107,7 +107,7 @@ unsigned char ReadChipRev(void);
 *   0x00 - If link is not up.
 *
 *******************************************************************************/
-unsigned char IsLinkUp(void);
+uint8_t enc_link_up(void);
 
 
 
@@ -116,28 +116,28 @@ bits from of the TX Status Vectors
 See ENC28J60 datasheet Page 43,Table 7-1
 */
 typedef union {
-	unsigned char v[7];
+	uint8_t v[7];
 	struct {
-		unsigned int	ByteCount;
-		unsigned char	CollisionCount:4;
-		unsigned char	CRCError:1;
-		unsigned char	LengthCheckError:1;
-		unsigned char	LengthOutOfRange:1;
-		unsigned char	Done:1;
-		unsigned char	Multicast:1;
-		unsigned char	Broadcast:1;
-		unsigned char	PacketDefer:1;
-		unsigned char	ExcessiveDefer:1;
-		unsigned char	MaximumCollisions:1;
-		unsigned char	LateCollision:1;
-		unsigned char	Giant:1;
-		unsigned char	Underrun:1;
-		unsigned int	BytesTransmittedOnWire;
-		unsigned char	ControlFrame:1;
-		unsigned char	PAUSEControlFrame:1;
-		unsigned char	BackpressureApplied:1;
-		unsigned char	VLANTaggedFrame:1;
-		unsigned char	Zeros:4;
+		uint16_t	ByteCount;
+		uint8_t		CollisionCount:4;
+		uint8_t		CRCError:1;
+		uint8_t		LengthCheckError:1;
+		uint8_t		LengthOutOfRange:1;
+		uint8_t		Done:1;
+		uint8_t		Multicast:1;
+		uint8_t		Broadcast:1;
+		uint8_t		PacketDefer:1;
+		uint8_t		ExcessiveDefer:1;
+		uint8_t		MaximumCollisions:1;
+		uint8_t		LateCollision:1;
+		uint8_t		Giant:1;
+		uint8_t		Underrun:1;
+		uint16_t	BytesTransmittedOnWire;
+		uint8_t		ControlFrame:1;
+		uint8_t		PAUSEControlFrame:1;
+		uint8_t		BackpressureApplied:1;
+		uint8_t		VLANTaggedFrame:1;
+		uint8_t		Zeros:4;
 	} bits;
 } TXSTATUS;
 
@@ -146,26 +146,26 @@ bits from of the RX Status Vectors
 See ENC28J60 datasheet Page 46,Table 7-3
 */
 typedef union {
-	unsigned char v[6];
+	uint8_t v[6];
 	struct {
-		unsigned int    NextPacket;
-        unsigned int	ByteCount;
-		unsigned char	LongEvent:1;
-		unsigned char	Reserved:1;
-		unsigned char	CarrierEvent:1;
-		unsigned char	Reserved2:1;
-		unsigned char	CRCError:1;
-		unsigned char	LenChkError:1;
-		unsigned char	LenOutofRange:1;
-		unsigned char	RxOk:1;
-		unsigned char	RxMultiCast:1;
-		unsigned char	RxBroadCast:1;
-		unsigned char	DribbleNibble:1;
-		unsigned char	RxCntrlFrame:1;
-		unsigned char	RxPauseFrame:1;
-		unsigned char	RxUkwnOpcode:1;
-        unsigned char   RxVlan:1;
-		unsigned char	Zeros:1;
+		uint16_t	NextPacket;
+        	uint16_t	ByteCount;
+		uint8_t		LongEvent:1;
+		uint8_t		Reserved:1;
+		uint8_t		CarrierEvent:1;
+		uint8_t		Reserved2:1;
+		uint8_t		CRCError:1;
+		uint8_t		LenChkError:1;
+		uint8_t		LenOutofRange:1;
+		uint8_t		RxOk:1;
+		uint8_t		RxMultiCast:1;
+		uint8_t		RxBroadCast:1;
+		uint8_t		DribbleNibble:1;
+		uint8_t		RxCntrlFrame:1;
+		uint8_t		RxPauseFrame:1;
+		uint8_t		RxUkwnOpcode:1;
+		uint8_t		RxVlan:1;
+		uint8_t		Zeros:1;
 	} bits;
 } RXSTATUS;
 
