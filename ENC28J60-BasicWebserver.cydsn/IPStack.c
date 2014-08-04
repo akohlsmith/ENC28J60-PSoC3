@@ -234,7 +234,7 @@ void SetupBasicIPPacket(void *packet, enum proto_types proto, ipaddr_t destIP)
 * Returns:
 *   It returns '1' if it finds a packet of type proto.(UDP/TCP/ICMP etc)
 *******************************************************************************/
-int GetPacket(enum proto_types proto_filter, void *packet)
+int GetPacket(enum proto_types proto, void *packet)
 {
 	unsigned int len;
 	uint16_t type;
@@ -257,12 +257,9 @@ int GetPacket(enum proto_types proto_filter, void *packet)
 
 		} else if (type == PKT_IP) {
 			IPhdr *ip = (IPhdr *)packet;
-			uint16_t proto;
-
-			proto = ntohs(ip->protocol);
 
 			/* PING PACKET HANDLER */
-			if (proto == PROTO_ICMP) {
+			if (ip->protocol == PROTO_ICMP) {
 				ICMPhdr *icmp = (ICMPhdr *)packet;
 
 				if (icmp->type == ICMPREQUEST) {
@@ -270,9 +267,8 @@ int GetPacket(enum proto_types proto_filter, void *packet)
 				} else if (icmp->type == ICMPREPLY) {
 					/* PING REPLY RECD. PROCESSSING CODE GOES HERE */
 				}
-			}
 
-			if (proto == PROTO_TCP) {
+			} else if (ip->protocol == PROTO_TCP) {
 				TCPhdr *tcp = (TCPhdr *)packet;
 				uint16_t dport;
 
@@ -327,12 +323,12 @@ int GetPacket(enum proto_types proto_filter, void *packet)
 			} /* end if (tcp packet) */
 
 			/* Packet type check, as passed via proto_fiter */
-			if (proto == proto_filter) {
+			if (ip->protocol == proto) {
 				return 1;
 			}
 
 			/*<------------UDP HANDLER START--------------------------->*/
-			if(proto == PROTO_UDP) {
+			if(ip->protocol == PROTO_UDP) {
 				UDPPacket *udp = (UDPPacket *)packet;
 				UDP_ProcessIncoming(udp);
 				return 1;
