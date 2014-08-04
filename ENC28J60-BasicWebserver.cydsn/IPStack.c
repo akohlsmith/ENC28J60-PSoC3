@@ -51,23 +51,23 @@ uint16_t ntohs(uint16_t x)
 * Returns:
 *   none.
 *******************************************************************************/
-void add32(unsigned char *op32, unsigned int op16)
+void add32(uint8_t *op32, uint16_t op16)
 {
 	op32[3] += (op16 & 0xff);
 	op32[2] += (op16 >> 8);
 
-	if(op32[2] < (op16 >> 8)) {
+	if (op32[2] < (op16 >> 8)) {
 		++op32[1];
-		if(op32[1] == 0) {
+		if (op32[1] == 0) {
 			++op32[0];
 		}
 	}
 
-	if(op32[3] < (op16 & 0xff)) {
+	if (op32[3] < (op16 & 0xff)) {
 		++op32[2];
-		if(op32[2] == 0) {
+		if (op32[2] == 0) {
 			++op32[1];
-			if(op32[1] == 0) {
+			if (op32[1] == 0) {
 				++op32[0];
 			}
 		}
@@ -105,7 +105,7 @@ void add32(unsigned char *op32, unsigned int op16)
 *   16 bit checksum.
 *   This function is taken from the TUXGraphics network stack,due to its elegance.
 *******************************************************************************/
-uint16 checksum(unsigned char *buf, unsigned int len, unsigned char type)
+uint16_t checksum(uint8_t *buf, uint16_t len, enum cksum_types type)
 {
 	uint32_t sum;
 
@@ -123,8 +123,8 @@ uint16 checksum(unsigned char *buf, unsigned int len, unsigned char type)
 	 * sourceIP and destIP, which are to be part of this pseudoheader,
 	 * and hence checksum calculation.
 	 */
-	if (type == 1) {
-		sum += UDPPROTOCOL;
+	if (type == CK_UDP) {
+		sum += PROTO_UDP;
 		sum += (len - 8);	/* Add the UDP len. */
 
 	/*
@@ -139,8 +139,8 @@ uint16 checksum(unsigned char *buf, unsigned int len, unsigned char type)
 	 * sourceIP and destIP, which are to be part of this pseudoheader,
 	 * and hence checksum calculation.
 	 */
-	} else if (type == 2) {
-		sum += TCPPROTOCOL;
+	} else if (type == CK_TCP) {
+		sum += PROTO_TCP;
 		sum += (len - 8);	/* Add the TCP len */
 	}
 
@@ -184,13 +184,13 @@ uint16 checksum(unsigned char *buf, unsigned int len, unsigned char type)
 * Returns:
 *   none.
 *******************************************************************************/
-void SetupBasicIPPacket(unsigned char *packet, unsigned char proto, unsigned char *destIP)
+void SetupBasicIPPacket(void *packet, enum proto_types proto, uint8_t *destIP[4])
 {
 	/* Structure the data buffer(packet) as an IP header */
 	IPhdr *ip = (IPhdr *)packet;
 
 	/* ETH type is an IP packet */
-	ip->eth.type = (IPPACKET);
+	ip->eth.type = htons(PKT_IP);
 
 	/* Set the MAC Addresses in the ETH header */
 	memcpy(ip->eth.DestAddrs, routerMAC, sizeof(routerMAC));
@@ -205,16 +205,11 @@ void SetupBasicIPPacket(unsigned char *packet, unsigned char proto, unsigned cha
 	ip->hdrlen = 0x5;
 	ip->diffsf = 0;
 	ip->ident = 2;	/* Random */
-	ip->flags = 0x4000;
+	ip->flags = htons(0x4000);
 	//ip->fragmentOffset1 = 0x00;
 	//ip->fragmentOffset2 = 0x00;
-
 	ip->ttl = 128;
-
-	/* Set the type of IP Protocol */
-	ip->protocol = proto;
-
-	/* Zero out the checksum */
+	ip->protocol = htons(proto);
 	ip->chksum = 0;
 }
 
@@ -239,53 +234,58 @@ void SetupBasicIPPacket(unsigned char *packet, unsigned char proto, unsigned cha
 * Returns:
 *   It returns '1' if it finds a packet of type proto.(UDP/TCP/ICMP etc)
 *******************************************************************************/
-unsigned int GetPacket(int proto, unsigned char *packet)
+int GetPacket(enum proto_types proto_filter, void *packet)
 {
 	unsigned int len;
+	uint16_t type;
 
 	/* Did we get any packets? */
 	if (len = MACRead(packet, MAXPACKETLEN)) {
 
 		/*Lets check if its an ARP packet.*/
-		EtherNetII * eth = (EtherNetII *)packet;
+		EtherNetII *eth = (EtherNetII *)packet;
 
-		if (eth->type == ARPPACKET) {
-			ARP *arpPacket = (ARP *)packet;
-			if (arpPacket->opCode == ARPREQUEST) {
-				return ReplyArpRequest(arpPacket);
+		type = ntohs(eth->type);
+		if (type == PKT_ARP) {
+			ARP *a = (ARP *)packet;
+			if (a->opCode == ARPREQUEST) {
+				return ReplyArpRequest(a);
 			}
 
-		} else if (eth->type == IPPACKET) {
-			IPhdr * ip = (IPhdr *)packet;
+		} else if (type == PKT_IP) {
+			IPhdr *ip = (IPhdr *)packet;
+			uint16_t proto;
+
+			proto = ntohs(ip->protocol);
 
 			/* PING PACKET HANDLER */
-			if (ip->protocol == ICMPPROTOCOL) {
-				ICMPhdr *ping = (ICMPhdr *)packet;
+			if (proto == PROTO_ICMP) {
+				ICMPhdr *icmp = (ICMPhdr *)packet;
 
-				if (ping->type == ICMPREQUEST) {
-					return PingReply((ICMPhdr *)packet, len);
-				} else if (ping->type == ICMPREPLY) {
+				if (icmp->type == ICMPREQUEST) {
+					return PingReply(icmp, len);
+				} else if (icmp->type == ICMPREPLY) {
 					/* PING REPLY RECD. PROCESSSING CODE GOES HERE */
 				}
 			}
 
-			if (ip->protocol == TCPPROTOCOL) {
-				TCPhdr *Pack = (TCPhdr *)packet;
+			if (proto == PROTO_TCP) {
+				TCPhdr *tcp = (TCPhdr *)packet;
 
 			/*<-------------WEBSERVER HANDLER START----------------->*/
-				if (Pack->destPort == WWWPort) {
+				if (tcp->destPort == WWWPort) {
 
 					/* is this a SYN? if so, reply with SYNACK. */
-					if (Pack->SYN == 1) {
-						return ackTcp(Pack, Pack->ip.len + 14, 1, 0, 0, 0);
+					if (tcp->SYN) {
+						return ackTcp(tcp, tcp->ip.len + 14, TF_SYN);
 
 					/* push the data up to the application? */
-					}else if ((Pack->PSH == 1) && (Pack->ACK == 1)) {
-						return WebServer_ProcessRequest(Pack);
+					} else if (tcp->PSH && tcp->ACK) {
+						return WebServer_ProcessRequest(tcp);
 
 					/* FIN? If so, ACK it and we're done */
-					} else if ((Pack->FIN == 1)) {
-						return ackTcp(Pack, Pack->ip.len + 14, 0, 0, 0, 0);
+					} else if (tcp->FIN) {
+						return ackTcp(tcp, tcp->ip.len + 14, TF_NONE);
 					}
 				}
 			/*<=============WEBSERVER HANDLER END====================>*/
@@ -293,43 +293,42 @@ unsigned int GetPacket(int proto, unsigned char *packet)
 
 			/*<-------------WEBCLIENT HANDLER START------------------>*/
 				/* is the packet a response to our request? */
-				if ((Pack->destPort == WClientPort) && (memcmp(Pack->ip.source, serverIP, 4) == 0)) {
+				if ((tcp->destPort == WClientPort) && (memcmp(tcp->ip.source, serverIP, 4) == 0)) {
 					/* got SYNACK? */
-					if ((Pack->SYN == 1) && (Pack->ACK == 1)) {
-						ackTcp(Pack, Pack->ip.len + 14, 0, 0, 0, 0);
-						WebClient_BrowseURL(Pack);
+					if (tcp->SYN && tcp->ACK) {
+						ackTcp(tcp, tcp->ip.len + 14, TF_NONE);
+						WebClient_BrowseURL(tcp);
 						WebClientStatus = 3;
 
 					} else {
 						/* did we receive data from the server? */
 						if ((WebClientStatus == 3) && ((len - sizeof(TCPhdr)) > 12)) {
-							WebClient_ProcessReply(Pack);
+							WebClient_ProcessReply(tcp);
 						}
 
 						/* are they closing the connection on us? ACK it if so */
-						if (Pack->FIN == 1) {
-							ackTcp(Pack, Pack->ip.len + 14, 0, 1, 0, 0);
+						if (tcp->FIN) {
+							ackTcp(tcp, tcp->ip.len + 14, TF_FIN);
 							WebClientStatus = 0;
 
 						/* Just ACK stuff that comes in */
-						} else if (((Pack->ip.len - 0x0028) > 0) && (WebClientStatus != 0)) {
-							ackTcp(Pack, Pack->ip.len + 14, 0, 0, 0, 0);
+						} else if (((tcp->ip.len - 0x0028) > 0) && (WebClientStatus != 0)) {
+							ackTcp(tcp, tcp->ip.len + 14, TF_NONE);
 						}
 					}
 				}
 			/*<=============WEBCLIENT HANDLER END====================>*/
 			} /* end if (tcp packet) */
 
-			/* Packet type check, as passed via proto */
-			if (ip->protocol == proto) {
-				/* Yes, there is a packet of your requested protocol type. */
+			/* Packet type check, as passed via proto_fiter */
+			if (proto == proto_filter) {
 				return 1;
 			}
 
 			/*<------------UDP HANDLER START--------------------------->*/
-			if(ip->protocol == UDPPROTOCOL) {
-				UDPPacket *UDPPtr = (UDPPacket *)packet;
-				UDP_ProcessIncoming(UDPPtr);
+			if(proto == PROTO_UDP) {
+				UDPPacket *udp = (UDPPacket *)packet;
+				UDP_ProcessIncoming(udp);
 				return 1;
 			}
 			/*<------------UDP HANDLER END------------------------------>*/
@@ -357,16 +356,15 @@ unsigned int GetPacket(int proto, unsigned char *packet)
 *******************************************************************************/
 void IPstackIdle(void)
 {
-	unsigned char packet[MAXPACKETLEN];
-	TCPhdr *TCPacket = (TCPhdr *)&packet;
+	uint8_t packet[MAXPACKETLEN];
+	TCPhdr *tcp = (TCPhdr *)&packet;
 
-	/*Check if Link is Up*/
 	if(! IsLinkUp()) {
 		return;
 	}
 
 	/* Nothing specific, just field the Pings and ARP Requests, SYN handshakes and GETs */
-	GetPacket(0, packet);
+	GetPacket(0, &packet);
 
 	if (WebClientStatus == 1) {
 		/* Send a SYN */
@@ -392,7 +390,7 @@ void IPstackIdle(void)
 * Returns:
 *   The length of ACK packet made.
 *******************************************************************************/
-unsigned int ackTcp(TCPhdr *tcp, unsigned int len, unsigned char syn_val, unsigned char fin_val, unsigned char rst_val, unsigned int psh_val)
+int ackTcp(TCPhdr *tcp, uint16_t len, enum tcp_flags flags)
 {
 	char ack[4];
 	unsigned int destPort;
@@ -400,8 +398,8 @@ unsigned int ackTcp(TCPhdr *tcp, unsigned int len, unsigned char syn_val, unsign
 	unsigned char *datptr;
 
 	/* Zero out the checksum fields */
-	tcp->chksum = 0x0;
-	tcp->ip.chksum = 0x0;
+	tcp->chksum = 0;
+	tcp->ip.chksum = 0;
 
 	/* Swap the MACs in the ETH header */
 	memcpy(tcp->ip.eth.DestAddrs, tcp->ip.eth.SrcAddrs, 6);
@@ -423,14 +421,14 @@ unsigned int ackTcp(TCPhdr *tcp, unsigned int len, unsigned char syn_val, unsign
 
 
 	/* Increment Ack Number if its a SYN, or FIN(ACK) packet. If not, fill it accordingly. */
-	if ((tcp->SYN == 1) || ((tcp->FIN == 1) && (tcp->PSH == 0))) {
+	if (tcp->SYN || (tcp->FIN && !tcp->PSH)) {
 		/* Increment Ack Number if its a SYN,or FIN packet. */
 		add32(tcp->ackNo, 1);
 	} else {
 		add32(tcp->ackNo, len - sizeof(TCPhdr));
 	}
 
-	if ((tcp->PSH == 1) && (tcp->destPort == WClientPort)) {
+	if (tcp->PSH && (tcp->destPort == WClientPort)) {
 		 add32(tcp->ackNo, 1);
 	}
 
@@ -440,9 +438,9 @@ unsigned int ackTcp(TCPhdr *tcp, unsigned int len, unsigned char syn_val, unsign
 	 * If not, then set the appropriate value in the length field of TCP
 	 * and dont add any options.
 	 */
-	if (syn_val) {
-		tcp->SYN = syn_val;
-		datptr = (unsigned char*)(tcp) + sizeof(TCPhdr);
+	if (flags & TF_SYN) {
+		tcp->SYN = 1;
+		datptr = (uint8_t *)(tcp) + sizeof(TCPhdr);
 		*datptr++ = 0x02;
 		*datptr++ = 0x04;
 		*datptr++ = HI8(300);
@@ -457,9 +455,9 @@ unsigned int ackTcp(TCPhdr *tcp, unsigned int len, unsigned char syn_val, unsign
 
 	/* set up the flags */
 	tcp->ACK = 1;
-	tcp->PSH = psh_val;
-	tcp->FIN = fin_val;
-	tcp->RST = rst_val;
+	tcp->PSH = ((flags & TF_PSH) == TF_PSH);
+	tcp->FIN = ((flags & TF_FIN) == TF_FIN);
+	tcp->RST = ((flags & TF_RST) == TF_RST);
 
 	/* Length of the Packet */
 	len = sizeof(TCPhdr) + dlength;
@@ -471,7 +469,7 @@ unsigned int ackTcp(TCPhdr *tcp, unsigned int len, unsigned char syn_val, unsign
 	tcp->ip.chksum = checksum((unsigned char *)tcp + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), 0);
 	tcp->chksum = checksum((unsigned char *)tcp->ip.source, 0x08 + 0x14 + dlength, 2);
 
-	return MACWrite((unsigned char *)tcp, len);
+	return MACWrite(tcp, len);
 }
 
 /*******************************************************************************
@@ -494,10 +492,10 @@ unsigned int ackTcp(TCPhdr *tcp, unsigned int len, unsigned char syn_val, unsign
 *   TRUE(0)- if the initialization was successful,and routerMAC has been updated properly.
 *   FALSE(1) - if the initialization(ARP for Router MAC) was not successful.
 *******************************************************************************/
-unsigned int IPstack_Start(unsigned char devMAC[6], unsigned char devIP[4])
+int IPstack_Start(uint8_t devMAC[6], uint8_t devIP[4])
 {
-	unsigned int i = 0;
-	ARP arpPacket;
+	ARP a;
+	int i = 0;
 
 	/* Copy the passed MAC and IP into our Global variables */
 	memcpy(deviceMAC, devMAC, 6);
@@ -506,8 +504,7 @@ unsigned int IPstack_Start(unsigned char devMAC[6], unsigned char devIP[4])
 	/* Initialize SPI and the Chip's memory, PHY etc. */
 	initMAC(deviceMAC);
 
-	/* Check if Link is Up */
-	if (IsLinkUp() == 0) {
+	if (! IsLinkUp()) {
 		return FALSE;
 	}
 
@@ -516,10 +513,13 @@ unsigned int IPstack_Start(unsigned char devMAC[6], unsigned char devIP[4])
 
 	/* Lets wait for the reply */
 	for (i=0; i < 0x5fff; i++) {
-		if (MACRead((unsigned char *)&arpPacket, sizeof(ARP) )!=0) {
-			if ((arpPacket.eth.type == ARPPACKET) && (arpPacket.opCode == ARPREPLY) && (! memcmp(arpPacket.senderIP, routerIP, sizeof(routerIP)))) {
-				/* Aha! The router sends back its MAC. Copy it into our appropriate global var. */
-				memcpy(routerMAC, arpPacket.senderMAC, sizeof(routerMAC));
+		if (MACRead(&a, sizeof(a)) != 0) {
+			uint16_t type, opcode;
+
+			type = ntohs(a.eth.type);
+			opcode = ntohs(a.opCode);
+			if ((type == PKT_ARP) && (opcode == ARPREPLY) && (! memcmp(a.senderIP, routerIP, sizeof(routerIP)))) {
+				memcpy(routerMAC, a.senderMAC, sizeof(routerMAC));
 				return TRUE;
 			}
 		}

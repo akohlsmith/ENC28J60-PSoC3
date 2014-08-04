@@ -8,7 +8,7 @@
  Description : This header file defines underlying ENC28J60 driver.
 */
 
-/* 
+/*
  Basic ENC28J60 Driver Code for PSoC3
  Author : Kartik Mankad
  Date : 17-06-12
@@ -69,7 +69,7 @@ unsigned char MACWrite(unsigned char* packet, unsigned int len);
 *   the length of the packet read into the buffer pointed to by packet.
 *
 *******************************************************************************/
-unsigned int MACRead(unsigned char* packet, unsigned int maxLen);
+unsigned int MACRead(void *dest, uint16_t maxLen);
 
 /*******************************************************************************
 * Function Name: ReadChipRev
@@ -81,7 +81,7 @@ unsigned int MACRead(unsigned char* packet, unsigned int maxLen);
 *   none.
 *
 * Returns:
-*   The silicon revision of the chip.Could be either of 
+*   The silicon revision of the chip.Could be either of
 *   __________________________________________________________
 *   Part Number| B1         | B4       | B5       | B7       |
 *   ___________|____________|__________|__________|__________|
@@ -318,7 +318,7 @@ See ENC28J60 datasheet Page 28,Table 4-1
 #define	EIR_TXIF		(1<<3)
 #define	EIR_TXERIF		(1<<1)
 #define	EIR_RXERIF		(1)
-	
+
 // ESTAT bits ---------
 #define	ESTAT_INT		(1<<7)
 #define ESTAT_BUFER		(1<<6)
@@ -326,13 +326,13 @@ See ENC28J60 datasheet Page 28,Table 4-1
 #define	ESTAT_RXBUSY	(1<<2)
 #define	ESTAT_TXABRT	(1<<1)
 #define	ESTAT_CLKRDY	(1)
-	
+
 // ECON2 bits --------
 #define	ECON2_AUTOINC	(1<<7)
 #define	ECON2_PKTDEC	(1<<6)
 #define	ECON2_PWRSV		(1<<5)
 #define	ECON2_VRPS		(1<<3)
-	
+
 // ECON1 bits --------
 #define	ECON1_TXRST		(1<<7)
 #define	ECON1_RXRST		(1<<6)
@@ -343,7 +343,7 @@ See ENC28J60 datasheet Page 28,Table 4-1
 #define	ECON1_BSEL1		(1<<1)
 #define	ECON1_BSEL0		(1)
 #define ECON1_BSEL      (3)
-      
+
 // ERXFCON bits ------
 #define	ERXFCON_UCEN	(unsigned char)(1<<7)
 #define	ERXFCON_ANDOR	(unsigned char)(1<<6)
@@ -353,13 +353,13 @@ See ENC28J60 datasheet Page 28,Table 4-1
 #define	ERXFCON_HTEN	(unsigned char)(1<<2)
 #define	ERXFCON_MCEN	(unsigned char)(1<<1)
 #define	ERXFCON_BCEN	(unsigned char)(1)
-	
+
 // MACON1 bits --------
 #define	MACON1_TXPAUS	(1<<3)
 #define	MACON1_RXPAUS	(1<<2)
 #define	MACON1_PASSALL	(1<<1)
 #define	MACON1_MARXEN	(unsigned char)(1)
-	
+
 // MACON3 bits --------
 #define	MACON3_PADCFG2	(1<<7)
 #define	MACON3_PADCFG1	(1<<6)
@@ -369,12 +369,12 @@ See ENC28J60 datasheet Page 28,Table 4-1
 #define	MACON3_HFRMEN	(1<<2)
 #define	MACON3_FRMLNEN	(1<<1)
 #define	MACON3_FULDPX	(1)
-	
+
 // MACON4 bits --------
 #define	MACON4_DEFER	(1<<6)
 #define	MACON4_BPEN		(1<<5)
 #define	MACON4_NOBKOFF	(1<<4)
-	
+
 // MICMD bits ---------
 #define	MICMD_MIISCAN	(1<<1)
 #define	MICMD_MIIRD		(1)
@@ -393,12 +393,12 @@ See ENC28J60 datasheet Page 28,Table 4-1
 #define	MISTAT_NVALID	(1<<2)
 #define	MISTAT_SCAN		(1<<1)
 #define	MISTAT_BUSY		(1)
-	
+
 // ECOCON bits -------
 #define	ECOCON_COCON2	(1<<2)
 #define	ECOCON_COCON1	(1<<1)
 #define	ECOCON_COCON0	(1)
-	
+
 // EFLOCON bits -----
 #define	EFLOCON_FULDPXS	(1<<2)
 #define	EFLOCON_FCEN1	(1<<1)

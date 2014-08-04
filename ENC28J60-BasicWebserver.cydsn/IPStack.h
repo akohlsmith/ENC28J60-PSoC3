@@ -23,22 +23,17 @@
 #define ICMPREPLY	(0x00)
 #define ICMPREQUEST	(0x08)
 
-/* Internet Protocol Codes */
-#define ICMPPROTOCOL	(0x1)
-#define UDPPROTOCOL	(0x11)
-#define TCPPROTOCOL	(0x6)
-
-/* Ethernet Packet types */
-#define ARPPACKET	(0x0806)
-#define IPPACKET	(0x0800)
-
 /* ARP OpCodes */
 #define ARPREPLY	(0x0002)
 #define ARPREQUEST	(0x0001)
 
 /* ARP Hardware types */
-#define ETHERNET	(0x0001)
+#define HW_ETHER	(0x0001)
 
+enum cksum_types { CK_IP, CK_TCP, CK_UDP, CK_ICMP };
+enum proto_types { PROTO_ICMP=0x1, PROTO_TCP=0x6, PROTO_UDP=0x11 };
+enum packet_types { PKT_IP=0x0800, PKT_ARP=0x0806 };
+enum tcp_flags { TF_NONE=0x00, TF_ACK=0x01, TF_SYN=0x02, TF_FIN=0x04, TF_RST=0x08, TF_PSH=0x10 };
 
 /* Struct for ETH header */
 typedef struct {
@@ -174,7 +169,7 @@ uint16_t ntohs(uint16_t x);
 *   TRUE(0)- if the initialization was successful,and routerMAC has been updated properly.
 *   FALSE(1) - if the initialization(ARP for Router MAC) was not successful.
 *******************************************************************************/
-unsigned int IPstack_Start(unsigned char deviceMAC[6], unsigned char deviceIP[4]);
+int IPstack_Start(uint8_t deviceMAC[6], uint8_t deviceIP[4]);
 
 /*******************************************************************************
 * Function Name: IPstackIdle
@@ -205,7 +200,7 @@ void IPstackIdle(void);
 * Returns:
 *   none.
 *******************************************************************************/
-void add32(unsigned char *op32, unsigned int op16);
+void add32(uint8_t *op32, uint16_t op16);
 
 /*******************************************************************************
 * Function Name: checksum
@@ -237,7 +232,7 @@ void add32(unsigned char *op32, unsigned int op16);
 * Returns:
 *   16 bit checksum.
 *******************************************************************************/
-uint16 checksum(unsigned char *buf, unsigned int len, unsigned char type);
+uint16 checksum(uint8_t *buf, uint16_t len, enum cksum_types type);
 
 /*******************************************************************************
 * Function Name: SetupBasicIPPacket
@@ -255,7 +250,7 @@ uint16 checksum(unsigned char *buf, unsigned int len, unsigned char type);
 * Returns:
 *   none.
 *******************************************************************************/
-void SetupBasicIPPacket(unsigned char *packet, unsigned char proto, unsigned char * destIP);
+void SetupBasicIPPacket(void *packet, enum proto_types proto, uint8_t *destIP[4]);
 
 
 /*******************************************************************************
@@ -278,7 +273,7 @@ void SetupBasicIPPacket(unsigned char *packet, unsigned char proto, unsigned cha
 * Returns:
 *   none.
 *******************************************************************************/
-unsigned int GetPacket(int proto, unsigned char * packet);
+int GetPacket(enum proto_types proto_filter, void *packet);
 
 /*******************************************************************************
 * Function Name: ackTcp
@@ -296,7 +291,7 @@ unsigned int GetPacket(int proto, unsigned char * packet);
 * Returns:
 *   The length of ACK packet made.
 *******************************************************************************/
-unsigned int ackTcp(TCPhdr *tcp, unsigned int len, unsigned char syn_val, unsigned char fin_val, unsigned char rst_val, unsigned int psh_val);
+int ackTcp(TCPhdr *tcp, uint16_t len, enum tcp_flags flags);
 
 #endif /* IPSTACK_H */
 

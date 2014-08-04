@@ -32,11 +32,11 @@ unsigned int SendArpRequest(unsigned char * targetIP)
 	/* Setup EtherNetII Header */
 	memcpy(a.eth.SrcAddrs, deviceMAC, 6);
 	memset(a.eth.DestAddrs, 0xff, 6);
-	a.eth.type = htons(ARPPACKET);
+	a.eth.type = htons(PKT_ARP);
 
 	/* Setup ARP Header */
-	a.hardware = htons(ETHERNET);
-	a.protocol = htons(IPPACKET);
+	a.hardware = htons(HW_ETHER);
+	a.protocol = htons(PKT_IP);
 	a.hardwareSize = 0x06;
 	a.protocolSize = 0x04;
 	a.opCode = htons(ARPREQUEST);
@@ -87,7 +87,7 @@ unsigned int ReplyArpRequest(ARP *a)
 		memcpy(a->senderIP, deviceIP, sizeof(deviceIP));
 
 		/*Set the opCode for an ARP Reply*/
-		a->opCode = (ARPREPLY);
+		a->opCode = htons(ARPREPLY);
 
 		/*Send the Packet!*/
 		return MACWrite((unsigned char *)a, sizeof(*a));
