@@ -5,7 +5,7 @@
  Author : Kartik Mankad
  Date : 30-06-12
  This code is licensed as CC-BY-SA 3.0
- Description : Functions to send and receive a ping are defined 
+ Description : Functions to send and receive a ping are defined
                in this header file.
 */
 
@@ -20,12 +20,12 @@
 *
 * Parameters:
 *   ping - A pointer of type ICMPhdr,to the received request's packet.
-*   len - length of the recd. Ping request.          
+*   len - length of the recd. Ping request.
 * Returns:
 *   TRUE(0)- if the Ping Reply was successfully sent.
 *   FALSE(1) - if the Ping Reply was not successful in transmission.
 *******************************************************************************/
-unsigned int PingReply(ICMPhdr* ping,unsigned int len);
+void PingReply(ICMPhdr* ping, uint16_t len);
 
 /*******************************************************************************
 * Function Name: SendPing
@@ -42,7 +42,7 @@ unsigned int PingReply(ICMPhdr* ping,unsigned int len);
 *   TRUE(0)- if the Ping request was successfully sent.
 *   FALSE(1) - if the Ping request was not successful in transmission.
 *******************************************************************************/
-unsigned int SendPing( unsigned char* targetIP );
+int SendPing(ipaddr_t targetIP);
 
 #endif
 

@@ -6,8 +6,9 @@
  Date : 30-06-12
  This code is licensed as CC-BY-SA 3.0
  Description : Functions to send and receive a ping
-               reply and request respectively,are contained here.
+	reply and request respectively,are contained here.
 */
+
 #include "IPStackMain.h"
 
 /*******************************************************************************
@@ -23,31 +24,25 @@
 *   TRUE(0)- if the Ping Reply was successfully sent.
 *   FALSE(1) - if the Ping Reply was not successful in transmission.
 *******************************************************************************/
-unsigned int PingReply(ICMPhdr* ping,unsigned int len){
+void PingReply(ICMPhdr* ping, uint16_t len)
+{
+	if (ping->type == ICMPREQUEST) {
+		ping->type = ICMPREPLY;
+		ping->chksum = 0;
+		ping->ip.chksum = 0;
 
-    if ( ping->type == ICMPREQUEST ){
-   /*Yes,it is a Request,lets reply.*/
-   /*Setup the packet as a reply*/
-    ping->type = ICMPREPLY;
-    ping->chksum = 0x0;
-    ping->ip.chksum = 0x0;
+		/* Swap the MAC and IP addresses in the headers */
+		memcpy(ping->ip.eth.DestAddrs, ping->ip.eth.SrcAddrs, sizeof(macaddr_t));
+		memcpy(ping->ip.eth.SrcAddrs, deviceMAC, sizeof(macaddr_t));
+		memcpy(ping->ip.dest, ping->ip.source, sizeof(ipaddr_t));
+		memcpy(ping->ip.source, deviceIP, sizeof(ipaddr_t));
 
-    /*Swap the MAC Addresses in the ETH header*/
-    memcpy( ping->ip.eth.DestAddrs, ping->ip.eth.SrcAddrs, 6);
-    memcpy( ping->ip.eth.SrcAddrs, deviceMAC,6 );
+		/* Compute the checksums */
+		ping->chksum = htons(checksum(((unsigned char *)ping) + sizeof(IPhdr), len - sizeof(IPhdr), 0));
+		ping->ip.chksum = htons(checksum(((unsigned char *)ping) + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), 0));
 
-    /*Swap the IP Addresses in the IP header*/
-    memcpy( ping->ip.dest, ping->ip.source,4);
-    memcpy( ping->ip.source, deviceIP,4);
-
-    /*Compute the checksums*/
-    ping->chksum=checksum(((unsigned char*) ping) + sizeof(IPhdr ),len - sizeof(IPhdr),0);
-    ping->ip.chksum = checksum(((unsigned char*) ping) + sizeof(EtherNetII),sizeof(IPhdr) - sizeof(EtherNetII),0);
-
-    /*Send it!*/
-    return(tx_packet((unsigned char*) ping, len));
-  }
-  return FALSE;
+		return tx_packet(ping, len);
+	}
 }
 
 /*******************************************************************************
@@ -65,37 +60,34 @@ unsigned int PingReply(ICMPhdr* ping,unsigned int len){
 *   TRUE(0)- if the Ping request was successfully sent.
 *   FALSE(1) - if the Ping request was not successful in transmission.
 *******************************************************************************/
-unsigned int SendPing(ipaddr_t targetIP)
+int SendPing(ipaddr_t targetIP)
 {
-    unsigned int i;
+	unsigned int i;
 
-    /*declare an ICMP header for our ping request packet*/
-    ICMPhdr ping;
+	/*declare an ICMP header for our ping request packet*/
+	ICMPhdr ping;
 
-    /*Setup the IP header part of it*/
-    SetupBasicIPPacket(&ping, PROTO_ICMP, targetIP);
+	memset(&ping, 0, sizeof(ping));
 
-    /*Setup the Ping flags*/
-    ping.ip.flags = 0x0;
-    ping.type = 0x8;
-    ping.codex = 0x0;
-    ping.chksum = 0x0;
-    ping.iden = (0x1);
-    ping.seqNum = (76);
+	/*Setup the IP header part of it*/
+	SetupBasicIPPacket(&ping, PROTO_ICMP, targetIP);
 
-    /*Fill in the dummy data*/
-    for(i=0;i<18;i++){
-        *((unsigned char*)&ping+sizeof(ICMPhdr)+i)='A'+i;
-    }
-    /*Write the length field*/
-    ping.ip.len = (60-sizeof(EtherNetII));
+	ping.ip.flags = 0x0;
+	ping.type = 0x8;
+	ping.iden = htons(1);
+	ping.seqNum = htons(76);
 
-    /*Compute the checksums*/
-    ping.chksum=checksum(((unsigned char*)&ping) + sizeof(IPhdr ),(sizeof(ICMPhdr) - sizeof(IPhdr))+18,0);
-    ping.ip.chksum = checksum(((unsigned char*)&ping) + sizeof(EtherNetII),sizeof(IPhdr) - sizeof(EtherNetII),0);
+	/*Fill in the dummy data*/
+	for (i=0; i<18; i++) {
+		*((unsigned char *)&ping + sizeof(ICMPhdr) + i) = 'A' + i;
+	}
 
-    /*Send it!*/
-    return(tx_packet( (unsigned char*)&ping, sizeof(ICMPhdr)+18 ));
+	/* Write the length and checksum fields */
+	ping.ip.len = htons(60 - sizeof(EtherNetII));
+	ping.chksum = htons(checksum(((unsigned char *)&ping) + sizeof(IPhdr ), (sizeof(ICMPhdr) - sizeof(IPhdr)) + 18, 0));
+	ping.ip.chksum = htons(checksum(((unsigned char *)&ping) + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), 0));
+
+	return tx_packet(&ping, sizeof(ICMPhdr) + 18);
 }
 
 

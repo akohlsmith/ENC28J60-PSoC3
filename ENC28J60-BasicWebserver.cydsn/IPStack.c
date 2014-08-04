@@ -263,7 +263,9 @@ int GetPacket(enum proto_types proto, void *packet)
 				ICMPhdr *icmp = (ICMPhdr *)packet;
 
 				if (icmp->type == ICMPREQUEST) {
-					return PingReply(icmp, len);
+					PingReply(icmp, len);
+					return 0;
+
 				} else if (icmp->type == ICMPREPLY) {
 					/* PING REPLY RECD. PROCESSSING CODE GOES HERE */
 				}
