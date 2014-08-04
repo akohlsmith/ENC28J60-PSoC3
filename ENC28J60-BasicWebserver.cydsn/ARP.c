@@ -25,9 +25,11 @@
 *   TRUE(0)- if the request was successfully transmitted.
 *   FALSE(1) - if the request was not successfully transmitted.
 *******************************************************************************/
-unsigned int SendArpRequest(unsigned char * targetIP)
+int SendArpRequest(ipaddr_t targetIP)
 {
 	ARP a;
+
+	memset(&a, 0, sizeof(a));
 
 	/* Setup EtherNetII Header */
 	memcpy(a.eth.SrcAddrs, deviceMAC, 6);
@@ -41,19 +43,11 @@ unsigned int SendArpRequest(unsigned char * targetIP)
 	a.protocolSize = 0x04;
 	a.opCode = htons(ARPREQUEST);
 
-	/* Target MAC is set to 0 as it is unknown. */
-	memset(a.targetMAC, 0, 6);
-
-	/* Sender MAC is the ENC28J60's MAC address. */
 	memcpy(a.senderMAC, deviceMAC, 6);
-
-	/* The target IP is the IP address we want resolved. */
+	memcpy(a.senderIP, deviceIP, 4);
 	memcpy(a.targetIP, targetIP, 4);
 
-	/* Sender IP will be the device IP */
-	memcpy(a.senderIP, deviceIP, 4);
-
-	return tx_packet((unsigned char *)&a, sizeof(a));
+	return tx_packet(&a, sizeof(a));
 }
 
 /*******************************************************************************
@@ -71,9 +65,9 @@ unsigned int SendArpRequest(unsigned char * targetIP)
 *   TRUE(0)- if the reply was successfully transmitted.
 *   FALSE(1) - if the reply was not successfully transmitted.
 *******************************************************************************/
-unsigned int ReplyArpRequest(ARP *a)
+int ReplyArpRequest(ARP *a)
 {
-	if (!memcmp(a->targetIP, deviceIP, sizeof(deviceIP))) {
+	if (! memcmp(a->targetIP, deviceIP, sizeof(deviceIP))) {
 		/* Swap the MAC Addresses in the ETH header */
 		memcpy(a->eth.DestAddrs, a->eth.SrcAddrs, sizeof(deviceMAC));
 		memcpy(a->eth.SrcAddrs, deviceMAC, sizeof(deviceMAC));
@@ -85,13 +79,9 @@ unsigned int ReplyArpRequest(ARP *a)
 		/* Swap the IP Addresses in the ARP packet */
 		memcpy(a->targetIP, a->senderIP, sizeof(deviceIP));
 		memcpy(a->senderIP, deviceIP, sizeof(deviceIP));
-
-		/*Set the opCode for an ARP Reply*/
 		a->opCode = htons(ARPREPLY);
 
-		/*Send the Packet!*/
 		return tx_packet((unsigned char *)a, sizeof(*a));
-
 	}
 
 	return FALSE;

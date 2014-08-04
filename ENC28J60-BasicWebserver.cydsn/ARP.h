@@ -28,7 +28,7 @@
 *   TRUE(0)- if the request was successfully transmitted.
 *   FALSE(1) - if the request was not successfully transmitted.
 *******************************************************************************/
-unsigned int SendArpRequest(unsigned char* targetIP);
+int SendArpRequest(ipaddr_t targetIP);
 
 /*******************************************************************************
 * Function Name: ReplyArpRequest
@@ -40,13 +40,13 @@ unsigned int SendArpRequest(unsigned char* targetIP);
 *
 * Parameters:
 *   arpPacket - A pointer to the received ARP Request packet.
-*             
+*
 * Returns:
 *   TRUE(0)- if the reply was successfully transmitted.
 *   FALSE(1) - if the reply was not successfully transmitted.
 *******************************************************************************/
-unsigned int ReplyArpRequest(ARP* arpPacket);
- 
+int ReplyArpRequest(ARP *arpPacket);
+
 #endif
- 
+
 /* [] END OF FILE */
