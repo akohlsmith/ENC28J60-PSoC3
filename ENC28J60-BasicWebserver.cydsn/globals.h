@@ -6,40 +6,27 @@
  Date : 30-06-12
  This code is licensed as CC-BY-SA 3.0
  Description : This header file defines(extern) the global variables used.
- 
+
  Do not edit variables here.Edit them in "globals.c" if you want.
 */
 
-/*IP Address of the ENC28J60*/
-extern unsigned char deviceIP[4];
+extern ipaddr_t deviceIP;
+extern macaddr_t deviceMAC;
 
-/*MAC Address of the ENC28J60*/
-extern unsigned char deviceMAC[6];
+extern ipaddr_t routerIP;
+extern macaddr_t routerMAC;
 
-/*IP Address of the Router*/
-extern unsigned char routerIP[4];
+extern ipaddr_t serverIP;
+extern ipaddr_t dnsIP;
 
-/*MAC Address of the Router*/
-extern unsigned char routerMAC[6];
+extern uint16_t WWWPort;
+extern uint16_t WClientPort;
+extern uint16_t UDPPort;
 
-/*IP Address of a Server*/
-/*For DNS and Webclient*/
- extern unsigned char serverIP[4];
- 
-/*IP Address of the DNS Server*/
-extern unsigned char dnsIP[4];
+extern int WebClientStatus;
 
-/*Webserver Port*/
-extern unsigned int WWWPort;
+extern uint8_t WebClientQuery[250];
 
-extern unsigned int WClientPort;
-
-/*Source Port for UDP Transmission*/
-extern unsigned int UDPPort;
-
-extern unsigned char WebClientStatus;
-
-extern unsigned char WebClientQuery[250];
 #define TRUE  0
 #define FALSE 1
 

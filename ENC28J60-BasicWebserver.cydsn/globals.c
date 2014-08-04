@@ -10,41 +10,28 @@
 
  You may edit Router IP,DNS Server IP and Webserver,Webclient Port here.
 */
-
+#include <stdint.h>
+#include "IPStack.h"
 #include "globals.h"
 
 /**Edit values as per your configuration**/
 
-/*IP Address of the Router*/
-unsigned char routerIP[4]={192,168,1,1};
+ipaddr_t routerIP = { 192, 168, 1, 1 };
+ipaddr_t serverIP;
+ipaddr_t dnsIP = { 192, 168, 1, 1 };
 
-/*IP Address of a Server*/
-/*For DNS and Webclient*/
- unsigned char serverIP[4];
- //
-/*IP Address of the DNS Server*/
-unsigned char dnsIP[4]={192,168,1,1};
- 
-/*Webserver Port*/
-unsigned int WWWPort=80;
+uint16_t WWWPort = 80;
+uint16_t WClientPort = 15979;
+uint16_t UDPPort = 1200;
 
-/*WebClient Port*/
-unsigned int WClientPort=15979;
-
-/*Source UDP Packet for sending UDP Packets*/
-unsigned int UDPPort=1200;
 /***********************************************/
 /***Do not assign values to variables below.***/
 
-/*IP Address of the ENC28J60*/
-unsigned char deviceIP[4];
+ipaddr_t deviceIP;
+macaddr_t deviceMAC;
+macaddr_t routerMAC;
 
-/*MAC Address of the ENC28J60*/
-unsigned char deviceMAC[6];
+int WebClientStatus = 0;
+uint8_t WebClientQuery[250];
 
-/*MAC Address of the Router*/
-unsigned char routerMAC[6];
-unsigned char WebClientStatus=0;
-
-unsigned char WebClientQuery[250];
 /* [] END OF FILE */
