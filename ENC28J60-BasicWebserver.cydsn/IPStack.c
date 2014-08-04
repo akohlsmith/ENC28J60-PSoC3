@@ -248,7 +248,10 @@ int GetPacket(enum proto_types proto_filter, void *packet)
 		type = ntohs(eth->type);
 		if (type == PKT_ARP) {
 			ARP *a = (ARP *)packet;
-			if (a->opCode == ARPREQUEST) {
+			uint16_t op;
+
+			op = ntohs(a->opCode);
+			if (op == ARPREQUEST) {
 				return ReplyArpRequest(a);
 			}
 
@@ -271,13 +274,16 @@ int GetPacket(enum proto_types proto_filter, void *packet)
 
 			if (proto == PROTO_TCP) {
 				TCPhdr *tcp = (TCPhdr *)packet;
+				uint16_t dport;
+
+				dport = ntohs(tcp->destPort);
 
 			/*<-------------WEBSERVER HANDLER START----------------->*/
-				if (tcp->destPort == WWWPort) {
+				if (dport == WWWPort) {
 
 					/* is this a SYN? if so, reply with SYNACK. */
 					if (tcp->SYN) {
-						return ackTcp(tcp, tcp->ip.len + 14, TF_SYN);
+						return ackTcp(tcp, ntohs(tcp->ip.len) + 14, TF_SYN);
 
 					/* push the data up to the application? */
 					} else if (tcp->PSH && tcp->ACK) {
@@ -285,7 +291,7 @@ int GetPacket(enum proto_types proto_filter, void *packet)
 
 					/* FIN? If so, ACK it and we're done */
 					} else if (tcp->FIN) {
-						return ackTcp(tcp, tcp->ip.len + 14, TF_NONE);
+						return ackTcp(tcp, ntohs(tcp->ip.len) + 14, TF_NONE);
 					}
 				}
 			/*<=============WEBSERVER HANDLER END====================>*/
@@ -293,10 +299,10 @@ int GetPacket(enum proto_types proto_filter, void *packet)
 
 			/*<-------------WEBCLIENT HANDLER START------------------>*/
 				/* is the packet a response to our request? */
-				if ((tcp->destPort == WClientPort) && (memcmp(tcp->ip.source, serverIP, 4) == 0)) {
+				if ((dport == WClientPort) && (memcmp(tcp->ip.source, serverIP, 4) == 0)) {
 					/* got SYNACK? */
 					if (tcp->SYN && tcp->ACK) {
-						ackTcp(tcp, tcp->ip.len + 14, TF_NONE);
+						ackTcp(tcp, ntohs(tcp->ip.len) + 14, TF_NONE);
 						WebClient_BrowseURL(tcp);
 						WebClientStatus = 3;
 
@@ -308,12 +314,12 @@ int GetPacket(enum proto_types proto_filter, void *packet)
 
 						/* are they closing the connection on us? ACK it if so */
 						if (tcp->FIN) {
-							ackTcp(tcp, tcp->ip.len + 14, TF_FIN);
+							ackTcp(tcp, ntohs(tcp->ip.len) + 14, TF_FIN);
 							WebClientStatus = 0;
 
 						/* Just ACK stuff that comes in */
-						} else if (((tcp->ip.len - 0x0028) > 0) && (WebClientStatus != 0)) {
-							ackTcp(tcp, tcp->ip.len + 14, TF_NONE);
+						} else if (((ntohs(tcp->ip.len) - 0x0028) > 0) && (WebClientStatus != 0)) {
+							ackTcp(tcp, ntohs(tcp->ip.len) + 14, TF_NONE);
 						}
 					}
 				}
@@ -465,8 +471,8 @@ int ackTcp(TCPhdr *tcp, uint16_t len, enum tcp_flags flags)
 	tcp->ip.len = (len - sizeof(EtherNetII));
 
 	/* Compute the checksums */
-	tcp->ip.chksum = checksum((unsigned char *)tcp + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), 0);
-	tcp->chksum = checksum((unsigned char *)tcp->ip.source, 0x08 + 0x14 + dlength, 2);
+	tcp->ip.chksum = htons(checksum((unsigned char *)tcp + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), 0));
+	tcp->chksum = htons(checksum((unsigned char *)tcp->ip.source, 0x08 + 0x14 + dlength, 2));
 
 	return tx_packet(tcp, len);
 }
