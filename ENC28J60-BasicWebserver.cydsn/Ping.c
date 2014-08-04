@@ -65,14 +65,15 @@ unsigned int PingReply(ICMPhdr* ping,unsigned int len){
 *   TRUE(0)- if the Ping request was successfully sent.
 *   FALSE(1) - if the Ping request was not successful in transmission.
 *******************************************************************************/
-unsigned int SendPing( unsigned char* targetIP ){
+unsigned int SendPing(ipaddr_t targetIP)
+{
     unsigned int i;
 
     /*declare an ICMP header for our ping request packet*/
     ICMPhdr ping;
 
     /*Setup the IP header part of it*/
-    SetupBasicIPPacket( (unsigned char*)&ping, PROTO_ICMP, targetIP );
+    SetupBasicIPPacket(&ping, PROTO_ICMP, targetIP);
 
     /*Setup the Ping flags*/
     ping.ip.flags = 0x0;

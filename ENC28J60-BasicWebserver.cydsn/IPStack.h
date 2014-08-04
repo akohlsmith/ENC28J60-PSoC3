@@ -35,10 +35,13 @@ enum proto_types { PROTO_ICMP=0x1, PROTO_TCP=0x6, PROTO_UDP=0x11 };
 enum packet_types { PKT_IP=0x0800, PKT_ARP=0x0806 };
 enum tcp_flags { TF_NONE=0x00, TF_ACK=0x01, TF_SYN=0x02, TF_FIN=0x04, TF_RST=0x08, TF_PSH=0x10 };
 
+typedef uint8_t ipaddr_t[4];
+typedef uint8_t macaddr_t[6];
+
 /* Struct for ETH header */
 typedef struct {
-	uint8_t DestAddrs[6];
-	uint8_t SrcAddrs[6];
+	macaddr_t DestAddrs;
+	macaddr_t SrcAddrs;
 	uint16_t type;
 } __attribute__((packed)) EtherNetII;
 
@@ -50,10 +53,10 @@ typedef struct {
 	uint8_t hardwareSize;
 	uint8_t protocolSize;
 	uint16_t opCode;
-	uint8_t senderMAC[6];
-	uint8_t senderIP[4];
-	uint8_t targetMAC[6];
-	uint8_t targetIP[4];
+	macaddr_t senderMAC;
+	ipaddr_t senderIP;
+	macaddr_t targetMAC;
+	ipaddr_t targetIP;
 } __attribute__((packed)) ARP;
 
 /* Struct for IP header */
@@ -68,8 +71,8 @@ typedef struct {
 	uint8_t ttl;
 	uint8_t protocol;
 	uint16_t chksum;
-	uint8_t source[4];
-	uint8_t dest[4];
+	ipaddr_t source;
+	ipaddr_t dest;
 } __attribute__((packed)) IPhdr;
 
 /* Struct for TCP Header */
@@ -169,7 +172,7 @@ uint16_t ntohs(uint16_t x);
 *   TRUE(0)- if the initialization was successful,and routerMAC has been updated properly.
 *   FALSE(1) - if the initialization(ARP for Router MAC) was not successful.
 *******************************************************************************/
-int IPstack_Start(uint8_t deviceMAC[6], uint8_t deviceIP[4]);
+int IPstack_Start(const macaddr_t deviceMAC, const ipaddr_t deviceIP);
 
 /*******************************************************************************
 * Function Name: IPstackIdle
@@ -250,7 +253,7 @@ uint16 checksum(uint8_t *buf, uint16_t len, enum cksum_types type);
 * Returns:
 *   none.
 *******************************************************************************/
-void SetupBasicIPPacket(void *packet, enum proto_types proto, uint8_t *destIP[4]);
+void SetupBasicIPPacket(void *packet, enum proto_types proto, ipaddr_t destIP);
 
 
 /*******************************************************************************

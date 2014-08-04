@@ -40,7 +40,7 @@ unsigned int DNSLookup( const char* url ){
 
     /*Setup a basic IP packet,of type UDP,since DNS uses UDP
       as a transport layer*/
-    SetupBasicIPPacket(packet, PROTO_UDP, dnsIP);
+    SetupBasicIPPacket(&packet, PROTO_UDP, dnsIP);
 
     /*Zero out the IP flags*/
     dns->udp.ip.flags = 0x0;

@@ -20,19 +20,19 @@
 *   udppkt - pointer to the UDP packet recd.
 *   datapayload - data to be sent in the UDP Reply.
 *   payloadlen - length of the data payload to be sent.
-*              
+*
 * Returns:
 *   TRUE(0)- if the UDP Reply was successfully sent.
 *   FALSE(1) - if the UDP Reply was not successful in transmission.
 *******************************************************************************/
-unsigned int UDPReply(UDPPacket* udppkt,unsigned char* datapayload,unsigned int payloadlen);
+int UDPReply(UDPPacket* udp, uint8_t *payload, uint16_t payloadlen);
 
 /*******************************************************************************
 * Function Name: UDPSend
 ********************************************************************************
 * Summary:
 *   Generate and send a UDP packet with data.
-*   You may edit the UDP Port number(that will be used as the source port) 
+*   You may edit the UDP Port number(that will be used as the source port)
 *   in "globals.c".Default is 1200.
 *
 * Parameters:
@@ -40,12 +40,12 @@ unsigned int UDPReply(UDPPacket* udppkt,unsigned char* datapayload,unsigned int 
 *   targetPort - Port to direct the UDP packet to.
 *   datapayload - data to be sent in the UDP packet.
 *   payloadlen - length of the data payload to be sent.
-*              
+*
 * Returns:
 *   TRUE(0)- if the UDP packet was successfully sent.
 *   FALSE(1) - if the UDP packet was not successful in transmission.
 *******************************************************************************/
-unsigned int UDPSend(unsigned char* targetIP,unsigned int targetPort,unsigned char* datapayload,unsigned int payloadlen);
+int UDPSend(ipaddr_t targetIP, uint16_t targetPort, uint8_t *payload, uint16_t payloadlen);
 
 
 /*******************************************************************************

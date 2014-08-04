@@ -184,7 +184,7 @@ uint16_t checksum(uint8_t *buf, uint16_t len, enum cksum_types type)
 * Returns:
 *   none.
 *******************************************************************************/
-void SetupBasicIPPacket(void *packet, enum proto_types proto, uint8_t *destIP[4])
+void SetupBasicIPPacket(void *packet, enum proto_types proto, ipaddr_t destIP)
 {
 	/* Structure the data buffer(packet) as an IP header */
 	IPhdr *ip = (IPhdr *)packet;
@@ -240,7 +240,7 @@ int GetPacket(enum proto_types proto_filter, void *packet)
 	uint16_t type;
 
 	/* Did we get any packets? */
-	if (len = MACRead(packet, MAXPACKETLEN)) {
+	if ((len = MACRead(packet, MAXPACKETLEN))) {
 
 		/*Lets check if its an ARP packet.*/
 		EtherNetII *eth = (EtherNetII *)packet;
@@ -357,7 +357,6 @@ int GetPacket(enum proto_types proto_filter, void *packet)
 void IPstackIdle(void)
 {
 	uint8_t packet[MAXPACKETLEN];
-	TCPhdr *tcp = (TCPhdr *)&packet;
 
 	if(! IsLinkUp()) {
 		return;
@@ -492,14 +491,14 @@ int ackTcp(TCPhdr *tcp, uint16_t len, enum tcp_flags flags)
 *   TRUE(0)- if the initialization was successful,and routerMAC has been updated properly.
 *   FALSE(1) - if the initialization(ARP for Router MAC) was not successful.
 *******************************************************************************/
-int IPstack_Start(uint8_t devMAC[6], uint8_t devIP[4])
+int IPstack_Start(const macaddr_t devMAC, const ipaddr_t devIP)
 {
 	ARP a;
 	int i = 0;
 
 	/* Copy the passed MAC and IP into our Global variables */
-	memcpy(deviceMAC, devMAC, 6);
-	memcpy(deviceIP, devIP, 4);
+	memcpy(deviceMAC, devMAC, sizeof(macaddr_t));
+	memcpy(deviceIP, devIP, sizeof(ipaddr_t));
 
 	/* Initialize SPI and the Chip's memory, PHY etc. */
 	initMAC(deviceMAC);

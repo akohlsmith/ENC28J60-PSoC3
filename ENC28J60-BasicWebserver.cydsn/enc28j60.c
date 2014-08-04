@@ -139,9 +139,10 @@ void initMAC(unsigned char* deviceMAC){
     WriteCtrReg(ECON1,  ECON1_RXEN);
 }
 
-unsigned char MACWrite(unsigned char* packet, unsigned int len){
-
-    unsigned char  bytControl=0x00;
+unsigned char MACWrite(void *packet, uint16_t len)
+{
+    uint8_t *buf = packet;
+    unsigned char bytControl=0x00;
 
 	/*Check if Link is Up*/
     if(IsLinkUp()==0){
@@ -166,7 +167,7 @@ unsigned char MACWrite(unsigned char* packet, unsigned int len){
     WriteMacBuffer(&bytControl,1);
 
     /*Write the packet into the ENC's buffer*/
-	WriteMacBuffer(packet, len);
+	WriteMacBuffer(buf, len);
 
 	/*Tell MAC when the end of the packet is*/
 	WriteCtrReg(ETXNDL, (unsigned char)( (len+TXSTART+1) & 0x00ff));

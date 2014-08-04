@@ -153,7 +153,7 @@ unsigned int WebClient_SendSYN(void)
 	}
 
 	/* We'll send a SYN to initiate the Handshake. */
-	SetupBasicIPPacket(packet, PROTO_TCP, serverIP);
+	SetupBasicIPPacket(&packet, PROTO_TCP, serverIP);
 
 	/* Source Port to be our Client Port */
 	TCPacket->sourcePort = WClientPort;

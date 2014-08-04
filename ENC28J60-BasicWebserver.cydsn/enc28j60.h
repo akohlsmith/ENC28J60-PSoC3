@@ -53,7 +53,7 @@ void initMAC(unsigned char* deviceMAC);
 *   FALSE(1) - if the Packet was not successfully transmitted.
 *
 *******************************************************************************/
-unsigned char MACWrite(unsigned char* packet, unsigned int len);
+unsigned char MACWrite(void *packet, uint16_t len);
 
 /*******************************************************************************
 * Function Name: MACRead

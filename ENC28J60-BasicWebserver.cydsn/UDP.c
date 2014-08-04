@@ -25,43 +25,43 @@
 *   TRUE(0)- if the UDP Reply was successfully sent.
 *   FALSE(1) - if the UDP Reply was not successful in transmission.
 *******************************************************************************/
-unsigned int UDPReply(UDPPacket* udppkt,unsigned char* datapayload,unsigned int payloadlen){
-
+int UDPReply(UDPPacket* udp, uint8_t *payload, uint16_t payloadlen)
+{
     uint16 port;
 
     /*Swap the MAC Addresses in the ETH header*/
-    memcpy( udppkt->udp.ip.eth.DestAddrs, udppkt->udp.ip.eth.SrcAddrs, 6);
-    memcpy( udppkt->udp.ip.eth.SrcAddrs, deviceMAC,6 );
+    memcpy( udp->udp.ip.eth.DestAddrs, udp->udp.ip.eth.SrcAddrs, 6);
+    memcpy( udp->udp.ip.eth.SrcAddrs, deviceMAC,6 );
 
     /*Swap the IP Addresses in the IP header*/
-    memcpy( udppkt->udp.ip.dest, udppkt->udp.ip.source,4);
-    memcpy( udppkt->udp.ip.source, deviceIP,4);
+    memcpy( udp->udp.ip.dest, udp->udp.ip.source,4);
+    memcpy( udp->udp.ip.source, deviceIP,4);
 
     /*Swap the ports*/
-    port=udppkt->udp.sourcePort;
-    udppkt->udp.sourcePort=udppkt->udp.destPort;
-    udppkt->udp.destPort=port;
+    port=udp->udp.sourcePort;
+    udp->udp.sourcePort=udp->udp.destPort;
+    udp->udp.destPort=port;
 
     /*zero the checksums*/
-    udppkt->udp.chksum=0x00;
-    udppkt->udp.ip.chksum=0x00;
+    udp->udp.chksum=0x00;
+    udp->udp.ip.chksum=0x00;
 
     /*write in the correct lengths*/
-    udppkt->udp.len=(sizeof(UDPhdr)-sizeof(IPhdr))+payloadlen;
-    udppkt->udp.ip.len=(sizeof(UDPhdr)+payloadlen)-sizeof(EtherNetII);
+    udp->udp.len=(sizeof(UDPhdr)-sizeof(IPhdr))+payloadlen;
+    udp->udp.ip.len=(sizeof(UDPhdr)+payloadlen)-sizeof(EtherNetII);
 
     /*clear the old payload*/
-    memset(udppkt->Payload,0x00, (udppkt->udp.len)-8 );
+    memset(udp->Payload,0x00, (udp->udp.len)-8 );
 
     /*copy in the payload*/
-    memcpy(udppkt->Payload,datapayload,payloadlen);
+    memcpy(udp->Payload,payload,payloadlen);
 
     /*do the checksums.*/
-    udppkt->udp.ip.chksum=checksum(((unsigned char*) udppkt) + sizeof(EtherNetII),sizeof(IPhdr) - sizeof(EtherNetII),0);
-    udppkt->udp.chksum=checksum((unsigned char*)udppkt->udp.ip.source,16+payloadlen,1);
+    udp->udp.ip.chksum=checksum(((unsigned char*) udp) + sizeof(EtherNetII),sizeof(IPhdr) - sizeof(EtherNetII),0);
+    udp->udp.chksum=checksum((unsigned char*)udp->udp.ip.source,16+payloadlen,1);
 
     /*Send the packet.*/
-    return(MACWrite((unsigned char*)udppkt, sizeof(UDPhdr)+payloadlen));
+    return MACWrite(udp, sizeof(UDPhdr) + payloadlen);
 }
 
 /*******************************************************************************
@@ -82,34 +82,35 @@ unsigned int UDPReply(UDPPacket* udppkt,unsigned char* datapayload,unsigned int 
 *   TRUE(0)- if the UDP packet was successfully sent.
 *   FALSE(1) - if the UDP packet was not successful in transmission.
 *******************************************************************************/
-unsigned int UDPSend(unsigned char* targetIP,unsigned int targetPort,unsigned char* datapayload,unsigned int payloadlen){
-    UDPPacket udppkt;
+int UDPSend(ipaddr_t targetIP, uint16_t targetPort, uint8_t *payload, uint16_t payloadlen)
+{
+    UDPPacket udp;
 
     /*Setup the IP part*/
-    SetupBasicIPPacket( (unsigned char*)&udppkt, PROTO_UDP, targetIP );
-    udppkt.udp.ip.flags = 0x0;
+    SetupBasicIPPacket(&udp, PROTO_UDP, targetIP);
+    udp.udp.ip.flags = 0x0;
 
     /*Setup the ports*/
-    udppkt.udp.sourcePort=UDPPort;
-    udppkt.udp.destPort=targetPort;
+    udp.udp.sourcePort=UDPPort;
+    udp.udp.destPort=targetPort;
 
     /*Zero the checksums*/
-    udppkt.udp.chksum=0x00;
-    udppkt.udp.ip.chksum=0x00;
+    udp.udp.chksum=0x00;
+    udp.udp.ip.chksum=0x00;
 
     /*Write in the correct lengths*/
-    udppkt.udp.len=(sizeof(UDPhdr)-sizeof(IPhdr))+payloadlen;
-    udppkt.udp.ip.len=(sizeof(UDPhdr)+payloadlen)-sizeof(EtherNetII);
+    udp.udp.len=(sizeof(UDPhdr)-sizeof(IPhdr))+payloadlen;
+    udp.udp.ip.len=(sizeof(UDPhdr)+payloadlen)-sizeof(EtherNetII);
 
     /*Copy in the payload*/
-    memcpy(udppkt.Payload,datapayload,payloadlen);
+    memcpy(udp.Payload,payload,payloadlen);
 
     /*Do the checksums.*/
-    udppkt.udp.ip.chksum=checksum((unsigned char*)&udppkt + sizeof(EtherNetII),sizeof(IPhdr) - sizeof(EtherNetII),0);
-    udppkt.udp.chksum=checksum((unsigned char*)&udppkt.udp.ip.source,16+payloadlen,1);
+    udp.udp.ip.chksum=checksum((unsigned char*)&udp + sizeof(EtherNetII),sizeof(IPhdr) - sizeof(EtherNetII),0);
+    udp.udp.chksum=checksum((unsigned char*)&udp.udp.ip.source,16+payloadlen,1);
 
     /*Send the packet!*/
-    return(MACWrite((unsigned char*)&udppkt, sizeof(UDPhdr)+payloadlen));
+    return(MACWrite((unsigned char*)&udp, sizeof(UDPhdr)+payloadlen));
 }
 
 /*******************************************************************************
