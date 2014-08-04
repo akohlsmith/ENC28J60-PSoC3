@@ -62,8 +62,8 @@ int gethostbyname_simple(const uint8_t *name, ipaddr_t *addr)
 	len = (unsigned char*)dnsq-packet;
 
 	/*Set the IP and UDP length fields*/
-	dns->udp.len = (len-sizeof(IPhdr));
-	dns->udp.ip.len = (len-sizeof(EtherNetII));
+	dns->udp.len = htons(len - sizeof(IPhdr));
+	dns->udp.ip.len = htons(len - sizeof(EtherNetII));
 
 	/*Calculate the UDP and IP Checksums*/
 	dns->udp.ip.chksum=checksum((unsigned char*)dns + sizeof(EtherNetII),sizeof(IPhdr) - sizeof(EtherNetII),0);
@@ -71,7 +71,7 @@ int gethostbyname_simple(const uint8_t *name, ipaddr_t *addr)
 	//(len+8) because Source IP and DestIP,which are part of the pseduoheader,are 4 bytes each.
 
 	/*Send the DNS Query packet*/
-	tx_packet(packet,len);
+	tx_packet(packet, len);
 
 	/*Now that we have sent the query,
 	  we wait for the reply,and then process it.*/
