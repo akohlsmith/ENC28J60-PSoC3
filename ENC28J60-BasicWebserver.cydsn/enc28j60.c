@@ -151,7 +151,7 @@ static uint16_t enc_readbuf(uint8_t *dest, uint16_t len)
 	rx_count = spiRxBuffer(dest, len);
 	SPI_SEL(FALSE);
 
-	return len;
+	return rx_count;
 }
 
 
@@ -206,18 +206,18 @@ void enc_init(const macaddr_t deviceMAC)
 
 	/* Setup the 8kb Memory space on the ENC28J60 by defining ERXST and ERXND */
 	enc_banksel(0);
-	enc_writectrl(ERXSTL, (unsigned char)(RXSTART & 0x00ff));
-	enc_writectrl(ERXSTH, (unsigned char)((RXSTART & 0xff00) >> 8));
-	enc_writectrl(ERXNDL, (unsigned char)(RXEND & 0x00ff));
-	enc_writectrl(ERXNDH, (unsigned char)((RXEND & 0xff00) >>8));
+	enc_writectrl(ERXSTL, RXSTART);
+	enc_writectrl(ERXSTH, RXSTART >> 8);
+	enc_writectrl(ERXNDL, RXEND);
+	enc_writectrl(ERXNDH, RXEND >> 8);
 
 	/* Set RX Read pointer to start of RX Buffer */
-	enc_writectrl(ERXRDPTL, (unsigned char)(RXSTART & 0x00ff));
-	enc_writectrl(ERXRDPTH, (unsigned char)((RXSTART & 0xff00) >> 8));
+	enc_writectrl(ERXRDPTL, RXSTART);
+	enc_writectrl(ERXRDPTH, RXSTART >> 8);
 
 	/* Setup Transmit Buffer */
-	enc_writectrl(ETXSTL, (unsigned char)(TXSTART & 0x00ff));
-	enc_writectrl(ETXSTH, (unsigned char)((TXSTART & 0xff00) >> 8));
+	enc_writectrl(ETXSTL, TXSTART);
+	enc_writectrl(ETXSTH, TXSTART >> 8);
 	/* End of buffer will depend on packets,so no point hardcoding it */
 
 	/* Set the RX Filters */
@@ -252,8 +252,8 @@ void enc_init(const macaddr_t deviceMAC)
 	enc_setbits(MACON1, MACON1_MARXEN);
 	enc_writectrl(MACON3, MACON3_FRMLNEN + MACON3_TXCRCEN + MACON3_PADCFG0);    // All small packets will be padded
 
-	enc_writectrl(MAMXFLL, (unsigned char)(MAXFRAMELEN & 0x00ff));
-	enc_writectrl(MAMXFLH, (unsigned char)((MAXFRAMELEN & 0xff00) >> 8));
+	enc_writectrl(MAMXFLL, MAXFRAMELEN);
+	enc_writectrl(MAMXFLH, MAXFRAMELEN >> 8);
 
 	/* set up back-to-back interpacket gap and non-back-to-back interpacket gap as per the data sheet */
 	enc_writectrl(MABBIPG, 0x12);
@@ -286,8 +286,7 @@ void enc_init(const macaddr_t deviceMAC)
 
 int tx_packet(void *packet, uint16_t len)
 {
-	uint8_t *buf = packet;
-	unsigned char bytControl = 0x00;
+	uint8_t v, *buf;
 
 	if (! enc_link_up()) {
 		return FALSE;
@@ -296,34 +295,38 @@ int tx_packet(void *packet, uint16_t len)
 	/* Configure TX Buffer Pointers */
 	enc_banksel(0);
 
-	/*Buffer write ptr to start of Tx packet*/
-	enc_writectrl(ETXSTL, (unsigned char)(TXSTART & 0x00ff));
-	enc_writectrl(ETXSTH, (unsigned char)((TXSTART & 0xff00) >> 8));
+	/* set TX buffer write pointer to start of TX memory */
+	enc_writectrl(ETXSTL, TXSTART);
+	enc_writectrl(ETXSTH, TXSTART >> 8);
 
-	/*Set write buffer pointer to point to start of Tx Buffer*/
-	enc_writectrl(EWRPTL, (unsigned char)(TXSTART & 0x00ff));
-	enc_writectrl(EWRPTH, (unsigned char)((TXSTART & 0xff00) >> 8));
+	/* set buffer write address to start of TX memory */
+	enc_writectrl(EWRPTL, TXSTART);
+	enc_writectrl(EWRPTH, TXSTART >> 8);
 
 	/*
 	 * Write the Per Packet Control Byte
 	 * see table 7-1: FORMAT FOR PER PACKET CONTROL BYTES on page 41
 	 */
-	enc_writebuf(&bytControl, 1);
+	v = 0;
+	enc_writebuf(&v, 1);
 
 	/* Write the packet into the ENC's buffer */
+	buf = packet;
 	enc_writebuf(buf, len);
 
+	++len;	/* add on the length of the control byte */
+
 	/* Tell MAC when the end of the packet is */
-	enc_writectrl(ETXNDL, (unsigned char)((len+TXSTART+1) & 0x00ff));
-	enc_writectrl(ETXNDH, (unsigned char)(((len+TXSTART+1) & 0xff00) >> 8));
+	enc_writectrl(ETXNDL, TXSTART + len);
+	enc_writectrl(ETXNDH, (TXSTART + len) >> 8);
 
 	/* We would like to enable Interrupts on Packet TX complete. */
-	enc_clearbits(EIR,EIR_TXIF);
+	enc_clearbits(EIR, EIR_TXIF);
 	enc_setbits(EIE, EIE_TXIE | EIE_INTIE);
 
 	ERRATAFIX;	/* see definition at top of this file */
 
-	/* Send that Packet! */
+	/* Send the packet */
 	enc_setbits(ECON1, ECON1_TXRTS);
 
 	/* Wait for the Chip to finish the TX,and read the TX interrrupt bit to check the same. */
@@ -338,10 +341,7 @@ int tx_packet(void *packet, uint16_t len)
 	 * We will now attempt to read the TX Status Vectors.
 	 * See TABLE 7-1: TRANSMIT STATUS VECTORS on Page 43 of the datasheet.
 	 */
-	len++;		/* because of the control byte */
 	enc_banksel(0);
-
-	/*Configure the buffer read ptr to read status structure*/
 	enc_writectrl(ERDPTL, TXSTART + len + 1);
 	enc_writectrl(ERDPTH, (TXSTART + len + 1) >> 8);
 
@@ -385,11 +385,11 @@ int rx_packet(void *dest, uint16_t maxLen)
 
 	/* Setup memory pointers to Read in this RX'd packet. */
 	enc_banksel(0);
-	enc_writectrl(ERDPTL, (unsigned char)(nextpckptr & 0x00ff));
-	enc_writectrl(ERDPTH, (unsigned char)((nextpckptr & 0xff00) >> 8));
+	enc_writectrl(ERDPTL, nextpckptr);
+	enc_writectrl(ERDPTH, nextpckptr >> 8);
 
 	/* Read in the Next Packet Pointer and the 32-bit status vector. See Figure 7-3 on page 45. */
-	enc_readbuf((unsigned char *)&rxstat.v[0], 6);
+	enc_readbuf(&rxstat.v[0], 6);
 
 	nextpckptr = rxstat.bits.NextPacket;
 
@@ -413,13 +413,13 @@ int rx_packet(void *dest, uint16_t maxLen)
 
 	/* Ensure that ERXRDPT is Always ODD! Else Buffer gets corrupted. See Errata point 5 */
 	enc_banksel(0);
-	if (((nextpckptr - 1) < RXSTART) || ((nextpckptr-1) > RXEND)) {
+	if (((nextpckptr - 1) < RXSTART) || ((nextpckptr - 1) > RXEND)) {
 		/* Free up memory in the device by adjusting the RX read pointer since we're done with the packet. */
-		enc_writectrl(ERXRDPTL, (RXEND & 0x00ff));
-		enc_writectrl(ERXRDPTH, ((RXEND & 0xff00) >> 8));
+		enc_writectrl(ERXRDPTL, RXEND);
+		enc_writectrl(ERXRDPTH, RXEND >> 8);
 	} else {
-		enc_writectrl(ERXRDPTL, ((nextpckptr - 1) & 0x00ff));
-		enc_writectrl(ERXRDPTH, (((nextpckptr - 1) & 0xff00) >> 8));
+		enc_writectrl(ERXRDPTL, (nextpckptr - 1));
+		enc_writectrl(ERXRDPTH, (nextpckptr - 1) >> 8);
 	}
 
 	/* To signal that we are done with the packet, decrement EPKTCNT */
