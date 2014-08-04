@@ -160,6 +160,7 @@ typedef struct
 #define __bswap_constant_64(x) __bswap_64(x)
 
 uint16_t htons(uint16_t x);
+uint16_t ntohs(uint16_t x);
 
 /*******************************************************************************
 * Function Name: IPstack_Start

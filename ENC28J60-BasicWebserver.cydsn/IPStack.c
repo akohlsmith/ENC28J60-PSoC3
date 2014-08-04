@@ -13,16 +13,29 @@
 #include <string.h>
 #include <device.h>
 
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 uint16_t htons(uint16_t x)
 {
-#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
 	return x;
-#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	return __bswap_16 (x);
-#else
-# error "What kind of system is this?"
-#endif
 }
+
+uint16_t ntohs(uint16_t x)
+{
+	return x;
+}
+#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+uint16_t htons(uint16_t x)
+{
+	return __bswap_16(x);
+}
+
+uint16_t ntohs(uint16_t x)
+{
+	return __bswap_16(x);
+}
+#else
+# error "Unknown/undefined system endianness"
+#endif
 
 /*******************************************************************************
 * Function Name: add32
