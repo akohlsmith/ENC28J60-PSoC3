@@ -6,12 +6,23 @@
  Date : 30-06-12
  This code is licensed as CC-BY-SA 3.0
  Description : This file contains the common functions required
-               by the remainder of the IP stack.
+			   by the remainder of the IP stack.
 */
 
 #include "IPStackMain.h"
 #include <string.h>
 #include <device.h>
+
+uint16_t htons(uint16_t x)
+{
+#if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+	return x;
+#elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	return __bswap_16 (x);
+#else
+# error "What kind of system is this?"
+#endif
+}
 
 /*******************************************************************************
 * Function Name: add32

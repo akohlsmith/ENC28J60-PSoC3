@@ -151,6 +151,16 @@ typedef struct
 	uint16_t arCount;
 }  __attribute__((packed)) DNShdr;
 
+#define __bswap_16(x) ((unsigned short)(__builtin_bswap32(x) >> 16))
+#define __bswap_32(x) ((unsigned int)__builtin_bswap32(x))
+#define __bswap_64(x) ((__uint64_t)__builtin_bswap64(x))
+
+#define __bswap_constant_16(x) __bswap_16(x)
+#define __bswap_constant_32(x) __bswap_32(x)
+#define __bswap_constant_64(x) __bswap_64(x)
+
+uint16_t htons(uint16_t x);
+
 /*******************************************************************************
 * Function Name: IPstack_Start
 ********************************************************************************
