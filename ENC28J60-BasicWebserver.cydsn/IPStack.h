@@ -14,43 +14,41 @@
 #define IPSTACK_H
 
 /* Maximum length of packet that the device will entertain */
-#define MAXPACKETLEN 600
+#define MAXPACKETLEN	(600)
 
 /* UDP Port for DNS Lookup */
-#define DNSUDPPORT 53
+#define DNSUDPPORT	(53)
 
 /* Ping OpCodes */
-#define ICMPREPLY 0x00
-#define ICMPREQUEST 0x08
+#define ICMPREPLY	(0x00)
+#define ICMPREQUEST	(0x08)
 
 /* Internet Protocol Codes */
-#define ICMPPROTOCOL 0x1
-#define UDPPROTOCOL 0x11
-#define TCPPROTOCOL 0x6
+#define ICMPPROTOCOL	(0x1)
+#define UDPPROTOCOL	(0x11)
+#define TCPPROTOCOL	(0x6)
 
 /* Ethernet Packet types */
-#define ARPPACKET 0x0806
-#define IPPACKET 0x0800
+#define ARPPACKET	(0x0806)
+#define IPPACKET	(0x0800)
 
 /* ARP OpCodes */
-#define ARPREPLY  0x0002
-#define ARPREQUEST 0x0001
+#define ARPREPLY	(0x0002)
+#define ARPREQUEST	(0x0001)
 
 /* ARP Hardware types */
-#define ETHERNET 0x0001
+#define ETHERNET	(0x0001)
 
 
 /* Struct for ETH header */
-typedef struct
-{
+typedef struct {
 	uint8_t DestAddrs[6];
 	uint8_t SrcAddrs[6];
 	uint16_t type;
-}  __attribute__((packed)) EtherNetII;
+} __attribute__((packed)) EtherNetII;
 
 /* Struct for ARP packet */
-typedef struct
-{
+typedef struct {
 	EtherNetII eth;
 	uint16_t hardware;
 	uint16_t protocol;
@@ -61,11 +59,10 @@ typedef struct
 	uint8_t senderIP[4];
 	uint8_t targetMAC[6];
 	uint8_t targetIP[4];
-}  __attribute__((packed)) ARP;
+} __attribute__((packed)) ARP;
 
 /* Struct for IP header */
-typedef struct
-{
+typedef struct {
 	EtherNetII eth;
 	uint8_t hdrlen : 4;
 	uint8_t version : 4;
@@ -78,11 +75,10 @@ typedef struct
 	uint16_t chksum;
 	uint8_t source[4];
 	uint8_t dest[4];
-}  __attribute__((packed)) IPhdr;
+} __attribute__((packed)) IPhdr;
 
-/*Struct for TCP Header*/
-typedef struct
-{
+/* Struct for TCP Header */
+typedef struct {
 	IPhdr ip;
 	uint16_t sourcePort;
 	uint16_t destPort;
@@ -102,46 +98,41 @@ typedef struct
 	uint16_t wndSize;
 	uint16_t chksum;
 	uint16_t urgentPointer;
-}  __attribute__((packed)) TCPhdr;
+} __attribute__((packed)) TCPhdr;
 
-/*Struct for UDP header*/
-typedef struct
-{
+/* Struct for UDP header */
+typedef struct {
 	IPhdr ip;
 	uint16_t sourcePort;
 	uint16_t destPort;
 	uint16_t len;
 	uint16_t chksum;
-}  __attribute__((packed)) UDPhdr;
+} __attribute__((packed)) UDPhdr;
 
-/*Struct for a complete(with data payload) UDP packet*/
-typedef struct
-{
+/* Struct for a complete(with data payload) UDP packet */
+typedef struct {
 	UDPhdr udp;
 	uint8_t Payload[MAXPACKETLEN];
-}  __attribute__((packed)) UDPPacket;
+} __attribute__((packed)) UDPPacket;
 
-/*Struct for a complete(with data payload) TCP packet*/
-typedef struct
-{
+/* Struct for a complete(with data payload) TCP packet */
+typedef struct {
 	TCPhdr TCP;
 	uint8_t Payload[MAXPACKETLEN];
-}  __attribute__((packed)) TCPPacket;
+} __attribute__((packed)) TCPPacket;
 
-/*Struct for an ICMP(Ping) header*/
-typedef struct
-{
+/* Struct for an ICMP(Ping) header */
+typedef struct {
 	IPhdr ip;
 	uint8_t type;
 	uint8_t codex;
 	uint16_t chksum;
 	uint16_t iden;
 	uint16_t seqNum;
-}  __attribute__((packed)) ICMPhdr;
+} __attribute__((packed)) ICMPhdr;
 
-/*Struct for a DNS header*/
-typedef struct
-{
+/* Struct for a DNS header */
+typedef struct {
 	UDPhdr udp;
 	uint16_t id;
 	uint16_t flags;
@@ -149,8 +140,9 @@ typedef struct
 	uint16_t anCount;
 	uint16_t nsCount;
 	uint16_t arCount;
-}  __attribute__((packed)) DNShdr;
+} __attribute__((packed)) DNShdr;
 
+/* macros to take advantage of the GCC builtin byte swap functions */
 #define __bswap_16(x) ((unsigned short)(__builtin_bswap32(x) >> 16))
 #define __bswap_32(x) ((unsigned int)__builtin_bswap32(x))
 #define __bswap_64(x) ((__uint64_t)__builtin_bswap64(x))
@@ -182,7 +174,7 @@ uint16_t ntohs(uint16_t x);
 *   TRUE(0)- if the initialization was successful,and routerMAC has been updated properly.
 *   FALSE(1) - if the initialization(ARP for Router MAC) was not successful.
 *******************************************************************************/
-unsigned int IPstack_Start(unsigned char deviceMAC[6],unsigned char deviceIP[4]);
+unsigned int IPstack_Start(unsigned char deviceMAC[6], unsigned char deviceIP[4]);
 
 /*******************************************************************************
 * Function Name: IPstackIdle
@@ -219,7 +211,7 @@ void add32(unsigned char *op32, unsigned int op16);
 * Function Name: checksum
 ********************************************************************************
 * Summary:
-*   Computes the checksum for UDP,TCP or IP as specified by the type parameter.
+*   Computes the checksum for UDP, TCP or IP as specified by the type parameter.
 *   Sequence and Ack numbers during an HTTP transaction.
 *   **Clear the checksum fields in the appropriate packets,before calculating.
 *
@@ -263,7 +255,7 @@ uint16 checksum(unsigned char *buf, unsigned int len, unsigned char type);
 * Returns:
 *   none.
 *******************************************************************************/
-void SetupBasicIPPacket( unsigned char* packet, unsigned char proto, unsigned char* destIP);
+void SetupBasicIPPacket(unsigned char *packet, unsigned char proto, unsigned char * destIP);
 
 
 /*******************************************************************************
@@ -286,7 +278,7 @@ void SetupBasicIPPacket( unsigned char* packet, unsigned char proto, unsigned ch
 * Returns:
 *   none.
 *******************************************************************************/
-unsigned int GetPacket( int proto, unsigned char* packet );
+unsigned int GetPacket(int proto, unsigned char * packet);
 
 /*******************************************************************************
 * Function Name: ackTcp
@@ -304,10 +296,8 @@ unsigned int GetPacket( int proto, unsigned char* packet );
 * Returns:
 *   The length of ACK packet made.
 *******************************************************************************/
-unsigned int ackTcp(TCPhdr* tcp, unsigned int len,unsigned char syn_val,unsigned char fin_val,unsigned char rst_val,unsigned int psh_val);
+unsigned int ackTcp(TCPhdr *tcp, unsigned int len, unsigned char syn_val, unsigned char fin_val, unsigned char rst_val, unsigned int psh_val);
 
-
-
-#endif
+#endif /* IPSTACK_H */
 
 /* [] END OF FILE */
