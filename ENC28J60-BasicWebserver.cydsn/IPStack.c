@@ -431,7 +431,7 @@ int ackTcp(TCPhdr *tcp, uint16_t len, enum tcp_flags flags)
 		add32(tcp->ackNo, len - sizeof(TCPhdr));
 	}
 
-	if (tcp->PSH && (tcp->destPort == WClientPort)) {
+	if (tcp->PSH && (ntohs(tcp->destPort) == WClientPort)) {
 		 add32(tcp->ackNo, 1);
 	}
 
@@ -466,7 +466,7 @@ int ackTcp(TCPhdr *tcp, uint16_t len, enum tcp_flags flags)
 	len = sizeof(TCPhdr) + dlength;
 
 	/* IP Length field. */
-	tcp->ip.len = (len - sizeof(EtherNetII));
+	tcp->ip.len = htons(len - sizeof(EtherNetII));
 
 	/* Compute the checksums */
 	tcp->ip.chksum = htons(checksum((unsigned char *)tcp + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), 0));

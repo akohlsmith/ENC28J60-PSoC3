@@ -12,42 +12,32 @@
 #include <string.h>
 #include <stdio.h>
 
+int WebServer_ProcessRequest(TCPhdr *tcp)
+{
+	unsigned int datalen;
+	unsigned int temp;
+	unsigned char templine[40];
 
-unsigned int WebServer_ProcessRequest(TCPhdr* TCPPackData){
-    unsigned int datalen;
+	if (strncmp("GET ", (unsigned char *)tcp + sizeof(TCPhdr), 4) != 0) {
+		//Reply with a 200 OK with queries that arent of type GET.
+		//
+		// for possible HTTP Status codes(404,301 etc) see:
+		// http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
+		datalen = AddWebServerData(tcp, 0, "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n");
+	}
 
-    unsigned int temp;/*Variable to store the Die Temperature*/
-    unsigned char templine[40];/*To store the temperature message*/
+	DieTemp_GetTemp((int16*)&temp);
+	sprintf(templine,"<h2>PSoC Temperature is %d deg C</h2>",temp);
 
+	if (strncmp("/ ", (unsigned char *)tcp + sizeof(TCPhdr) + 4, 2) == 0) {
+		datalen = AddWebServerData(tcp, 0, "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n");
+		datalen = AddWebServerData(tcp, datalen, "<title>ENC28J60-PSoC3</title>");
+		datalen = AddWebServerData(tcp, datalen, "<h1>ENC28J60-PSoC3</h1>");
+		datalen = AddWebServerData(tcp, datalen, "<hr>");
+		datalen = AddWebServerData(tcp, datalen, templine);
+	}
 
-    if (strncmp("GET ",(unsigned char*)TCPPackData+sizeof(TCPhdr),4)!=0){
-        //Reply with a 200 OK with queries that arent of type GET.
-        //
-        // for possible HTTP Status codes(404,301 etc) see:
-        // http://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html
-        datalen=AddWebServerData(TCPPackData,0,"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n");
-    }
-
-
-    /*Get the temperature*/
-    DieTemp_GetTemp((int16*)&temp);
-
-    /*Format the temperature into a good string*/
-    sprintf(templine,"<h2>PSoC Temperature is %d deg C</h2>",temp);
-
-
-    /*Build HomePage*/
-    if (strncmp("/ ",(unsigned char*)TCPPackData+sizeof(TCPhdr)+4,2)==0){
-        datalen=AddWebServerData(TCPPackData,0,"HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n");
-        datalen=AddWebServerData(TCPPackData,datalen,"<title>ENC28J60-PSoC3</title>");
-        datalen=AddWebServerData(TCPPackData,datalen,"<h1>ENC28J60-PSoC3</h1>");
-        datalen=AddWebServerData(TCPPackData,datalen,"<hr>");
-        datalen=AddWebServerData(TCPPackData,datalen,templine);
-    }
-
-
-    /*Deliver the webpage*/
-    return(ReplyTCP_Webserver(TCPPackData,datalen));
+	return ReplyTCP_Webserver(tcp, datalen);
 }
 
 /*******************************************************************************
@@ -58,19 +48,21 @@ unsigned int WebServer_ProcessRequest(TCPhdr* TCPPackData){
 *   to the GET query.
 *
 * Parameters:
-*    TCPPkt - pointer to a TCP packet that has the GET Query.
+*    tcp - pointer to a TCP packet that has the GET Query.
 *    pos  - position in the data part where data must be appended.
 *    str - the constant string that is to be appened.This is usually the HTML.
 * Returns:
 *   current position of data in the TCP packet.
 *******************************************************************************/
-unsigned int AddWebServerData(TCPhdr* TCPPkt,unsigned int pos,const char* str){
-    while(*str){
-        *((unsigned char*)TCPPkt+sizeof(TCPhdr)+pos)=*str;
-        pos++;
-        str++;
-    }
-    return(pos);
+int AddWebServerData(TCPhdr* tcp, unsigned int pos, const char* str)
+{
+	while (*str) {
+		*((unsigned char *)tcp + sizeof(TCPhdr) + pos) = *str;
+		pos++;
+		str++;
+	};
+
+	return pos;
 }
 
 /*******************************************************************************
@@ -81,36 +73,32 @@ unsigned int AddWebServerData(TCPhdr* TCPPkt,unsigned int pos,const char* str){
 *   to the GET query.This function ACK's the GET query,and then sends the reply.
 *
 * Parameters:
-*    TCPPkt - pointer to a TCP packet that has the Webpage.
+*    tcp - pointer to a TCP packet that has the Webpage.
 *    len  - length of this packet.
 * Returns:
 *   TRUE(0)- if the packet was successfully sent.
 *   FALSE(1) - if the packet was not successful in transmission.
 *******************************************************************************/
-unsigned int ReplyTCP_Webserver(TCPhdr* TCPPkt,unsigned int datlen){
+int ReplyTCP_Webserver(TCPhdr *tcp, unsigned int datlen)
+{
+	/*Send an ACK for the GET query*/
+	ackTcp(tcp, ntohs(tcp->ip.len) + 14, TF_NONE);
 
-    /*Send an ACK for the GET query*/
-    ackTcp(TCPPkt, htons(TCPPkt->ip.len) + 14, TF_NONE);
+	/* Based on that ACK we sent, create the reply to the GET query */
+	tcp->ACK = 1;
+	tcp->PSH = 1;
+	tcp->FIN = 1;
 
-    /*Based on that ACK we sent,create the reply to the GET query*/
-    /*Set the flags.*/
-    TCPPkt->ACK=1;
-    TCPPkt->PSH=1;
-    TCPPkt->FIN=1;
+	/* Set the length field */
+	tcp->ip.len = htons(sizeof(TCPhdr) + datlen - sizeof(EtherNetII));
 
-    /*Set the length field*/
-    TCPPkt->ip.len=(sizeof(TCPhdr)+datlen)-sizeof(EtherNetII);
+	tcp->ip.chksum = 0;
+	tcp->ip.chksum = htons(checksum((unsigned char *)tcp + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), 0));
 
-    /*Zero out and then compute IP checksum*/
-    TCPPkt->ip.chksum=0x00;
-    TCPPkt->ip.chksum=checksum((unsigned char*)TCPPkt + sizeof(EtherNetII),sizeof(IPhdr)-sizeof(EtherNetII),0);
+	tcp->chksum = 0;
+	tcp->chksum = htons(checksum((unsigned char *)tcp->ip.source, 0x08 + 0x14 + datlen, 2));
 
-    /*Zero out and then compute TCP checksum*/
-    TCPPkt->chksum=0x00;
-    TCPPkt->chksum=checksum((unsigned char*)TCPPkt->ip.source,0x08+0x14+datlen,2);
-
-    /*Send the reply*/
-    return(tx_packet((unsigned char*)TCPPkt,sizeof(TCPhdr)+datlen));
+	return tx_packet(tcp, sizeof(TCPhdr) + datlen);
  }
 
 /* [] END OF FILE */
