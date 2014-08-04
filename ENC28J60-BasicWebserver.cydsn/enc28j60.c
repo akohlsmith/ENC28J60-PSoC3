@@ -391,11 +391,10 @@ int rx_packet(void *dest, uint16_t maxLen)
 	/* Read in the Next Packet Pointer and the 32-bit status vector. See Figure 7-3 on page 45. */
 	enc_readbuf((unsigned char *)&rxstat.v[0], 6);
 
-	/*Because, Little Endian.*/
-	nextpckptr = CYSWAP_ENDIAN16(rxstat.bits.NextPacket);
+	nextpckptr = rxstat.bits.NextPacket;
 
-	/*Compute actual length of the RX'd Packet.*/
-	pckLen = CYSWAP_ENDIAN16(rxstat.bits.ByteCount) - 4;	/* -4 to remove the CRC */
+	/* Compute actual length of the RX'd Packet (subtract off the CRC). */
+	pckLen = rxstat.bits.ByteCount - 4;
 
 	/* limit the amount of data we pull in */
 	if (pckLen > (maxLen - 1)) {
