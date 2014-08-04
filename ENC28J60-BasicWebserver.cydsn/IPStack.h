@@ -5,160 +5,160 @@
  Author : Kartik Mankad
  Date : 30-06-12
  This code is licensed as CC-BY-SA 3.0
- Description : This header file defines functions,structures,parameters 
-               common to protocols implemented.
- 
+ Description : This header file defines functions,structures,parameters
+							 common to protocols implemented.
+
 */
 
 #ifndef IPSTACK_H
 #define IPSTACK_H
 
-/*Maximum length of packet that the device will entertain*/
+/* Maximum length of packet that the device will entertain */
 #define MAXPACKETLEN 600
 
-/*UDP Port for DNS Lookup*/
+/* UDP Port for DNS Lookup */
 #define DNSUDPPORT 53
 
-/*Ping OpCodes*/
+/* Ping OpCodes */
 #define ICMPREPLY 0x00
 #define ICMPREQUEST 0x08
 
-/*Internet Protocol Codes*/
-#define ICMPPROTOCOL 0x1 //ICMP
-#define UDPPROTOCOL 0x11 //UDP
-#define TCPPROTOCOL 0x6 //TCP
+/* Internet Protocol Codes */
+#define ICMPPROTOCOL 0x1
+#define UDPPROTOCOL 0x11
+#define TCPPROTOCOL 0x6
 
-/*Ethernet Packet types*/
+/* Ethernet Packet types */
 #define ARPPACKET 0x0806
 #define IPPACKET 0x0800
 
-/*ARP OpCodes*/
+/* ARP OpCodes */
 #define ARPREPLY  0x0002
 #define ARPREQUEST 0x0001
 
-/*ARP Hardware types*/
+/* ARP Hardware types */
 #define ETHERNET 0x0001
 
 
-/*Struct for ETH header*/
+/* Struct for ETH header */
 typedef struct
 {
-  unsigned char DestAddrs[6];
-  unsigned char SrcAddrs[6];
-  unsigned int type;
-}  EtherNetII;
+	uint8_t DestAddrs[6];
+	uint8_t SrcAddrs[6];
+	uint16_t type;
+}  __attribute__((packed)) EtherNetII;
 
-/*Struct for ARP packet*/
+/* Struct for ARP packet */
 typedef struct
 {
-  EtherNetII eth;
-  unsigned int hardware;
-  unsigned int protocol;
-  unsigned char hardwareSize;
-  unsigned char protocolSize;
-  unsigned int opCode;
-  unsigned char senderMAC[6];
-  unsigned char senderIP[4];
-  unsigned char targetMAC[6];
-  unsigned char targetIP[4];
-} ARP;
+	EtherNetII eth;
+	uint16_t hardware;
+	uint16_t protocol;
+	uint8_t hardwareSize;
+	uint8_t protocolSize;
+	uint16_t opCode;
+	uint8_t senderMAC[6];
+	uint8_t senderIP[4];
+	uint8_t targetMAC[6];
+	uint8_t targetIP[4];
+}  __attribute__((packed)) ARP;
 
-/*Struct for IP header*/
+/* Struct for IP header */
 typedef struct
 {
-  EtherNetII eth;
-  unsigned char hdrlen : 4;
-  unsigned char version : 4;
-  unsigned char diffsf;
-  unsigned int len;
-  unsigned int ident;  
-  unsigned int flags;
-  unsigned char ttl;
-  unsigned char protocol;
-  unsigned int chksum;
-  unsigned char source[4];
-  unsigned char dest[4];
-}IPhdr;
+	EtherNetII eth;
+	uint8_t hdrlen : 4;
+	uint8_t version : 4;
+	uint8_t diffsf;
+	uint16_t len;
+	uint16_t ident;
+	uint16_t flags;
+	uint8_t ttl;
+	uint8_t protocol;
+	uint16_t chksum;
+	uint8_t source[4];
+	uint8_t dest[4];
+}  __attribute__((packed)) IPhdr;
 
 /*Struct for TCP Header*/
 typedef struct
 {
-  IPhdr ip;
-  unsigned int sourcePort;
-  unsigned int destPort;
-  unsigned char seqNo[4];
-  unsigned char ackNo[4];
-  unsigned char NS:1;
-  unsigned char reserverd : 3;
-  unsigned char hdrLen : 4;
-  unsigned char FIN:1;
-  unsigned char SYN:1;
-  unsigned char RST:1;
-  unsigned char PSH:1;
-  unsigned char ACK:1;
-  unsigned char URG:1;
-  unsigned char ECE:1;
-  unsigned char CWR:1;
-  unsigned int wndSize;
-  unsigned int chksum;
-  unsigned int urgentPointer;
-}TCPhdr;
+	IPhdr ip;
+	uint16_t sourcePort;
+	uint16_t destPort;
+	uint8_t seqNo[4];
+	uint8_t ackNo[4];
+	uint8_t NS:1;
+	uint8_t reserverd : 3;
+	uint8_t hdrLen : 4;
+	uint8_t FIN:1;
+	uint8_t SYN:1;
+	uint8_t RST:1;
+	uint8_t PSH:1;
+	uint8_t ACK:1;
+	uint8_t URG:1;
+	uint8_t ECE:1;
+	uint8_t CWR:1;
+	uint16_t wndSize;
+	uint16_t chksum;
+	uint16_t urgentPointer;
+}  __attribute__((packed)) TCPhdr;
 
 /*Struct for UDP header*/
 typedef struct
 {
-  IPhdr ip;
-  unsigned int sourcePort;
-  unsigned int destPort;
-  unsigned int len;
-  unsigned int chksum;
-}UDPhdr;
+	IPhdr ip;
+	uint16_t sourcePort;
+	uint16_t destPort;
+	uint16_t len;
+	uint16_t chksum;
+}  __attribute__((packed)) UDPhdr;
 
 /*Struct for a complete(with data payload) UDP packet*/
 typedef struct
 {
-  UDPhdr udp;
-  unsigned char Payload[MAXPACKETLEN];
-}UDPPacket;
+	UDPhdr udp;
+	uint8_t Payload[MAXPACKETLEN];
+}  __attribute__((packed)) UDPPacket;
 
 /*Struct for a complete(with data payload) TCP packet*/
 typedef struct
 {
-  TCPhdr TCP;
-  unsigned char Payload[MAXPACKETLEN];
-} TCPPacket;
+	TCPhdr TCP;
+	uint8_t Payload[MAXPACKETLEN];
+}  __attribute__((packed)) TCPPacket;
 
 /*Struct for an ICMP(Ping) header*/
 typedef struct
 {
-  IPhdr ip;
-  unsigned char type;
-  unsigned char codex;
-  unsigned int chksum;
-  unsigned int iden;
-  unsigned int seqNum;
-} ICMPhdr;
+	IPhdr ip;
+	uint8_t type;
+	uint8_t codex;
+	uint16_t chksum;
+	uint16_t iden;
+	uint16_t seqNum;
+}  __attribute__((packed)) ICMPhdr;
 
 /*Struct for a DNS header*/
 typedef struct
 {
-  UDPhdr udp;
-  unsigned int id;
-  unsigned int flags;
-  unsigned int qdCount;
-  unsigned int anCount;
-  unsigned int nsCount;
-  unsigned int arCount;
-} DNShdr;
+	UDPhdr udp;
+	uint16_t id;
+	uint16_t flags;
+	uint16_t qdCount;
+	uint16_t anCount;
+	uint16_t nsCount;
+	uint16_t arCount;
+}  __attribute__((packed)) DNShdr;
 
 /*******************************************************************************
 * Function Name: IPstack_Start
 ********************************************************************************
 * Summary:
 *   This function initializes the IP Stack,and the Chip.
-*   It performs an ARP request with the purpose of finding 
+*   It performs an ARP request with the purpose of finding
 *   the router MAC Address for use by the remaining stack.
-*   
+*
 *   This function *must be called first.*
 *
 *   Ensure that RouterIP is correct before calling this function.
@@ -166,7 +166,7 @@ typedef struct
 * Parameters:
 *   deviceMAC - The MAC Address you would like to assign to the ENC chip.
 *   deviceIP - The IP Address you would like to assign to the ENC chip.
-*             
+*
 * Returns:
 *   TRUE(0)- if the initialization was successful,and routerMAC has been updated properly.
 *   FALSE(1) - if the initialization(ARP for Router MAC) was not successful.
@@ -182,7 +182,7 @@ unsigned int IPstack_Start(unsigned char deviceMAC[6],unsigned char deviceIP[4])
 *   It uses GetPacket,and so can auto-reply to Pings and ARP requests.
 * Parameters:
 *   none.
-*             
+*
 * Returns:
 * none.
 *******************************************************************************/
@@ -192,13 +192,13 @@ void IPstackIdle(void);
 * Function Name: add32
 ********************************************************************************
 * Summary:
-*   Adds a 16 bit operand to a 32bit one.Used here to update 
+*   Adds a 16 bit operand to a 32bit one.Used here to update
 *   Sequence and Ack numbers during an HTTP transaction.
 *
 * Parameters:
 *   op32 - pointer to the 32bit operand.
 *   op16 - the 16bit operand.
-*             
+*
 * Returns:
 *   none.
 *******************************************************************************/
@@ -214,9 +214,9 @@ void add32(unsigned char *op32, unsigned int op16);
 *
 * Parameters:
 *   buf - pointer to the data structure over which the checksum must be calc'd.
-*   For ICMP or IP Checksums(type 0),pointer should point to the start of 
+*   For ICMP or IP Checksums(type 0),pointer should point to the start of
 *   the IP header.
-*   For TCP(type 2)/UDP(type 1),pointer should point to 
+*   For TCP(type 2)/UDP(type 1),pointer should point to
 *   the sourceIP field in the IPheader.
 *
 *   len - length of the data structure over which checksum must be calc'd.
@@ -225,16 +225,16 @@ void add32(unsigned char *op32, unsigned int op16);
 *   For TCP(type 2)/UDP(type 1),it should be UDP or TCP header plus 8,because
 *   the source IP and destination IP(which are part of the checksum's pseudoheader)
 *   are 4bytes long each.
-*   
+*
 *   type - The Type of checksum we require,
 *           0 for IP/ICMP checksums
 *           1 for UDP checksums
 *           2 for TCP checksums
-*            
+*
 * Returns:
 *   16 bit checksum.
 *******************************************************************************/
-uint16 checksum(uint8 *buf, uint16 len,uint8 type);
+uint16 checksum(unsigned char *buf, unsigned int len, unsigned char type);
 
 /*******************************************************************************
 * Function Name: SetupBasicIPPacket
@@ -248,7 +248,7 @@ uint16 checksum(uint8 *buf, uint16 len,uint8 type);
 *   packet - pointer to the packet data structure to be populated.
 *   proto - value of the protocol field in the IP header(TCP,ICMP,UDP,IP)
 *   destIP - IP address to be filled in the destination IP field.
-*             
+*
 * Returns:
 *   none.
 *******************************************************************************/
@@ -267,11 +267,11 @@ void SetupBasicIPPacket( unsigned char* packet, unsigned char proto, unsigned ch
 *
 * Parameters:
 *   proto -  Protocol type for the packets we want to retrive.
-*            use TCPPROTOCOL,UDPPROTOCOL,ICMPPROTOCOL as they have been declared 
+*            use TCPPROTOCOL,UDPPROTOCOL,ICMPPROTOCOL as they have been declared
 *            already in "IPStack.h"
 *            with the appropriate values.
 *   packet - pointer to a buffer that can store the RX'd packet of type proto.
-*             
+*
 * Returns:
 *   none.
 *******************************************************************************/
@@ -289,7 +289,7 @@ unsigned int GetPacket( int proto, unsigned char* packet );
 *   len - length of the TCP packet which is to be ACK'd.
 *   syn_val - If this is 1,then the ack will be a SYN ACK with MSS=1408.
 *             If this is 0,then its a bare-bones ACK.
-*             
+*
 * Returns:
 *   The length of ACK packet made.
 *******************************************************************************/
