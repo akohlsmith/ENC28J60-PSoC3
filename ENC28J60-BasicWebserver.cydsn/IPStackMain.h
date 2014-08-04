@@ -12,8 +12,8 @@
 #define IPSTACKMAIN_H
 
 #include <device.h>
-#include "enc28j60.h"
 #include "IPStack.h"
+#include "enc28j60.h"
 #include "ARP.h"
 #include "Ping.h"
 #include "UDP.h"
