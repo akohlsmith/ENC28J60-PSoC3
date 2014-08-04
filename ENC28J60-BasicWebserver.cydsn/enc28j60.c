@@ -342,8 +342,8 @@ int tx_packet(void *packet, uint16_t len)
 	enc_banksel(0);
 
 	/*Configure the buffer read ptr to read status structure*/
-	enc_writectrl(ERDPTL, (unsigned char)(len & 0x00ff));
-	enc_writectrl(ERDPTH, (unsigned char)((len & 0xff00) >> 8));
+	enc_writectrl(ERDPTL, TXSTART + len + 1);
+	enc_writectrl(ERDPTH, (TXSTART + len + 1) >> 8);
 
 	/* Read In the TX Status Vectors */
 	/* Note: Use these for debugging. Really useful. */
