@@ -90,7 +90,7 @@ unsigned int AddWebServerData(TCPhdr* TCPPkt,unsigned int pos,const char* str){
 unsigned int ReplyTCP_Webserver(TCPhdr* TCPPkt,unsigned int datlen){
 
     /*Send an ACK for the GET query*/
-    ackTcp(TCPPkt,(TCPPkt->ip.len)+14,TF_NONE);
+    ackTcp(TCPPkt, htons(TCPPkt->ip.len) + 14, TF_NONE);
 
     /*Based on that ACK we sent,create the reply to the GET query*/
     /*Set the flags.*/
