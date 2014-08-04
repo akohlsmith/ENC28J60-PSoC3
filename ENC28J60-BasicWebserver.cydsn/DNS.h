@@ -22,12 +22,12 @@
 * Parameters:
 *   url - a constant character string that is the domain name to be
 *         looked up. eg: DNSLookup("google.com");
-*             
+*
 * Returns:
 *   TRUE(0)- if the lookup was successful,and serverIP has been updated properly.
 *   FALSE(1) - if the lookup was not successful.
 *******************************************************************************/
-unsigned int DNSLookup( const char* url );
+int gethostbyname_simple(const uint8_t *name, ipaddr_t *addr);
 
 #endif
 

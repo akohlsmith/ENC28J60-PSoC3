@@ -45,7 +45,7 @@ void main(void)
 	memcpy(WebClientQuery, Query, strlen(Query));
 
 	/* Perform a DNS Lookup,and a PUT request,if the DNS worked. */
-	if (DNSLookup("mixdown.ca") == TRUE) {
+	if (gethostbyname_simple("mixdown.ca", &serverIP) == TRUE) {
 		/* Send the Query stored in WebClientQuery */
 		WebClient_Send();
 	}
