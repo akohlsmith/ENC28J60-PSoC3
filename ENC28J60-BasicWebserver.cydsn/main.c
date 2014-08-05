@@ -44,12 +44,13 @@ void main(void)
 	/* Set the Query in the global query variable WebClientQuery */
 	memcpy(WebClientQuery, Query, strlen(Query));
 
+#if 0
 	/* Perform a DNS Lookup,and a PUT request,if the DNS worked. */
 	if (gethostbyname_simple("mixdown.ca", &serverIP) == TRUE) {
 		/* Send the Query stored in WebClientQuery */
 		WebClient_Send();
 	}
-
+#endif
 	for (;;) {
 		IPstackIdle();
 	}
