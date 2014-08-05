@@ -18,6 +18,7 @@
 #include "Ping.h"
 #include "UDP.h"
 #include "DNS.h"
+#include "dhcp.h"
 #include "Webserver.h"
 #include "Webclient.h"
 #include "globals.h"
