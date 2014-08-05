@@ -436,8 +436,8 @@ int ackTcp(TCPhdr *tcp, uint16_t len, enum tcp_flags flags)
 		datptr = (uint8_t *)(tcp) + sizeof(TCPhdr);
 		*datptr++ = 0x02;
 		*datptr++ = 0x04;
-		*datptr++ = HI8(300);
-		*datptr++ = LO8(300);
+		*datptr++ = HI8(MSS);
+		*datptr++ = LO8(MSS);
 		tcp->hdrLen = 6;	/* 6 because its length is 24 bytes. Multiples of 4 bytes. */
 		dlength += 4;		/* MSS option is 4 bytes, so length of (data) options = 4. */
 

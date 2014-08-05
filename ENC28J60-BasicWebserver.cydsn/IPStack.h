@@ -15,6 +15,7 @@
 
 /* Maximum length of packet that the device will entertain */
 #define MAXPACKETLEN	(600)
+#define MSS		(MAXPACKETLEN - 128)	/* arbitrary */
 
 /* UDP Port for DNS Lookup */
 #define DNSUDPPORT	(53)
