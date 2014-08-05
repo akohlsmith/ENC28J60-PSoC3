@@ -141,6 +141,24 @@ typedef struct {
 	uint16_t arCount;
 } __attribute__((packed)) DNShdr;
 
+typedef struct {
+	UDPhdr udp;
+	uint8_t op;
+	uint8_t htype;
+	uint8_t hlen;
+	uint8_t hops;
+	uint32_t xid;
+	uint16_t secs;
+	uint16_t flags;
+	ipaddr_t ciaddr;
+	ipaddr_t yiaddr;
+	ipaddr_t siaddr;
+	ipaddr_t giaddr;
+	uint8_t chaddr[16];
+	uint8_t sname[64];
+	uint8_t file[128];
+} __attribute__((packed)) DHCPhdr;
+
 /* macros to take advantage of the GCC builtin byte swap functions */
 #define __bswap_16(x) ((unsigned short)(__builtin_bswap32(x) >> 16))
 #define __bswap_32(x) ((unsigned int)__builtin_bswap32(x))
@@ -152,6 +170,8 @@ typedef struct {
 
 uint16_t htons(uint16_t x);
 uint16_t ntohs(uint16_t x);
+uint32_t ntohl(uint32_t x);
+uint32_t htonl(uint32_t x);
 
 /*******************************************************************************
 * Function Name: IPstack_Start

@@ -14,25 +14,17 @@
 #include <device.h>
 
 #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-uint16_t htons(uint16_t x)
-{
-	return x;
-}
+uint16_t htons(uint16_t x) { return x; }
+uint16_t ntohs(uint16_t x) { return x; }
+uint32_t htonl(uint32_t x) { return x; }
+uint32_t ntohl(uint32_t x) { return x; }
 
-uint16_t ntohs(uint16_t x)
-{
-	return x;
-}
 #elif __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-uint16_t htons(uint16_t x)
-{
-	return __bswap_16(x);
-}
+uint16_t htons(uint16_t x) { return __bswap_16(x); }
+uint16_t ntohs(uint16_t x) { return __bswap_16(x); }
+uint32_t ntohl(uint32_t x) { return __bswap_32(x); }
+uint32_t htonl(uint32_t x) { return __bswap_32(x); }
 
-uint16_t ntohs(uint16_t x)
-{
-	return __bswap_16(x);
-}
 #else
 # error "Unknown/undefined system endianness"
 #endif
