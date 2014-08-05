@@ -68,7 +68,7 @@ int gethostbyname_simple(const uint8_t *name, ipaddr_t *addr)
 	/*Calculate the UDP and IP Checksums*/
 	dns->udp.ip.chksum = htons(checksum((uint8_t *)dns + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), CK_IP));
 	dns->udp.chksum = htons(checksum(&dns->udp.ip.source, len + 8 - sizeof(IPhdr), CK_UDP));
-	/* NOTE: len + 8 because Source IP and DestIP, which are part of the pseduoheader, are 4 bytes each.
+	/* NOTE: len + 8 because Source IP and DestIP, which are part of the pseduoheader, are 4 bytes each. */
 
 	/*Send the DNS Query packet*/
 	tx_packet(packet, len);
