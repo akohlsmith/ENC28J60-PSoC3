@@ -94,36 +94,36 @@ unsigned int WebClient_Send(void)
 *   TRUE(0)- if the Query was successfully sent.
 *   FALSE(1) - if the Query was not successful in transmission.
 *******************************************************************************/
-unsigned int WebClient_BrowseURL(TCPhdr* Tpacket)
+unsigned int WebClient_BrowseURL(TCPhdr* tcp)
 {
 	unsigned int datlen;
 
 	/* We have finished the handshake, so lets send the Actual Query */
-	Tpacket->PSH = 1;
+	tcp->PSH = 1;
 
 	/* Dont Fragment */
-	Tpacket->ip.flags = 0x4000;
-	Tpacket->ip.ttl = 128;
+	tcp->ip.flags = 0x4000;
+	tcp->ip.ttl = 128;
 
 	/* Length of Query String */
 	datlen = strlen(WebClientQuery);
 
 	/* Copy in the Query */
-	memcpy((unsigned char *)Tpacket + sizeof(TCPhdr), WebClientQuery, datlen);
+	memcpy((unsigned char *)tcp + sizeof(TCPhdr), WebClientQuery, datlen);
 
 	/* Set IP Length field */
-	Tpacket->ip.len = (sizeof(TCPhdr) + datlen) - sizeof(EtherNetII);
+	tcp->ip.len = (sizeof(TCPhdr) + datlen) - sizeof(EtherNetII);
 
 	/* Zero out the checksums */
-	Tpacket->ip.chksum = 0x00;
-	Tpacket->chksum = 0x00;
+	tcp->ip.chksum = 0;
+	tcp->chksum = 0;
 
 	/* Compute the checksums */
-	Tpacket->ip.chksum = checksum((unsigned char *)Tpacket + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), 0);
-	Tpacket->chksum = checksum((unsigned char *)Tpacket->ip.source, 0x08 + 0x14 + datlen, 2);
+	tcp->ip.chksum = htons(checksum((uint8_t *)tcp + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), CK_IP));
+	tcp->chksum = htons(checksum(&tcp->ip.source, 0x08 + 0x14 + datlen, CK_TCP));
 
 	/* Send the Query TCP Packet */
-	return(tx_packet((unsigned char *)Tpacket, sizeof(TCPhdr) + datlen));
+	return tx_packet(tcp, sizeof(TCPhdr) + datlen);
 }
 
 /*******************************************************************************
@@ -184,14 +184,14 @@ unsigned int WebClient_SendSYN(void)
 
 
 	/* Zero out the checksums */
-	TCPacket->ip.chksum = 0x00;
-	TCPacket->chksum = 0x00;
+	TCPacket->ip.chksum = 0;
+	TCPacket->chksum = 0;
 	/* Thanks to duncanspumpkin for pointing out the absence of these valuable lines */
 
 	/* Compute the checksums */
-	TCPacket->ip.chksum = checksum((unsigned char *)TCPacket + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), 0);
-	TCPacket->chksum = checksum((unsigned char *)TCPacket->ip.source, 0x08 + 0x14 + 4, 2);
+	TCPacket->ip.chksum = checksum((uint8_t *)TCPacket + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), CK_IP);
+	TCPacket->chksum = checksum(&TCPacket->ip.source, 0x08 + 0x14 + 4, CK_TCP);
 
 	/* Send the SYN */
-	return(tx_packet((unsigned char *)TCPacket, sizeof(TCPhdr) + 4));
+	return tx_packet(TCPacket, sizeof(TCPhdr) + 4);
 }
