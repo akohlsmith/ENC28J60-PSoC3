@@ -57,8 +57,8 @@ int UDPReply(UDPPacket* udp, uint8_t *payload, uint16_t payloadlen)
     memcpy(udp->Payload,payload,payloadlen);
 
     /*do the checksums.*/
-    udp->udp.ip.chksum=checksum(((unsigned char*) udp) + sizeof(EtherNetII),sizeof(IPhdr) - sizeof(EtherNetII),0);
-    udp->udp.chksum=checksum((unsigned char*)udp->udp.ip.source,16+payloadlen,1);
+    udp->udp.ip.chksum = htons(checksum(((uint8_t *)udp) + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), CK_IP));
+    udp->udp.chksum = htons(checksum(&udp->udp.ip.source, 16 + payloadlen, CK_UDP));
 
     /*Send the packet.*/
     return tx_packet(udp, sizeof(UDPhdr) + payloadlen);
@@ -106,11 +106,11 @@ int UDPSend(ipaddr_t targetIP, uint16_t targetPort, uint8_t *payload, uint16_t p
     memcpy(udp.Payload,payload,payloadlen);
 
     /*Do the checksums.*/
-    udp.udp.ip.chksum=checksum((unsigned char*)&udp + sizeof(EtherNetII),sizeof(IPhdr) - sizeof(EtherNetII),0);
-    udp.udp.chksum=checksum((unsigned char*)&udp.udp.ip.source,16+payloadlen,1);
+    udp.udp.ip.chksum = htons(checksum((uint8_t *)&udp + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), CK_IP));
+    udp.udp.chksum = htons(checksum(&udp.udp.ip.source, 16 + payloadlen, CK_UDP));
 
     /*Send the packet!*/
-    return(tx_packet((unsigned char*)&udp, sizeof(UDPhdr)+payloadlen));
+    return tx_packet(&udp, sizeof(UDPhdr) + payloadlen);
 }
 
 /*******************************************************************************

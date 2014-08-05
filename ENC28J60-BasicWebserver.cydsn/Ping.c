@@ -38,8 +38,8 @@ void PingReply(ICMPhdr* ping, uint16_t len)
 		memcpy(ping->ip.source, deviceIP, sizeof(ipaddr_t));
 
 		/* Compute the checksums */
-		ping->chksum = htons(checksum(((unsigned char *)ping) + sizeof(IPhdr), len - sizeof(IPhdr), 0));
-		ping->ip.chksum = htons(checksum(((unsigned char *)ping) + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), 0));
+		ping->chksum = htons(checksum(((uint8_t *)ping) + sizeof(IPhdr), len - sizeof(IPhdr), CK_ICMP));
+		ping->ip.chksum = htons(checksum(((uint8_t *)ping) + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), CK_IP));
 
 		return tx_packet(ping, len);
 	}
@@ -84,8 +84,8 @@ int SendPing(ipaddr_t targetIP)
 
 	/* Write the length and checksum fields */
 	ping.ip.len = htons(60 - sizeof(EtherNetII));
-	ping.chksum = htons(checksum(((unsigned char *)&ping) + sizeof(IPhdr ), (sizeof(ICMPhdr) - sizeof(IPhdr)) + 18, 0));
-	ping.ip.chksum = htons(checksum(((unsigned char *)&ping) + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), 0));
+	ping.chksum = htons(checksum(((uint8_t *)&ping) + sizeof(IPhdr), (sizeof(ICMPhdr) - sizeof(IPhdr)) + 18, CK_ICMP));
+	ping.ip.chksum = htons(checksum(((uint8_t *)&ping) + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), CK_IP));
 
 	return tx_packet(&ping, sizeof(ICMPhdr) + 18);
 }

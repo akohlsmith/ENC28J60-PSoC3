@@ -81,7 +81,7 @@ int AddWebServerData(TCPhdr* tcp, unsigned int pos, const char* str)
 *******************************************************************************/
 int ReplyTCP_Webserver(TCPhdr *tcp, unsigned int datlen)
 {
-	/*Send an ACK for the GET query*/
+	/* Send an ACK for the GET query */
 	ackTcp(tcp, ntohs(tcp->ip.len) + 14, TF_NONE);
 
 	/* Based on that ACK we sent, create the reply to the GET query */
@@ -93,10 +93,10 @@ int ReplyTCP_Webserver(TCPhdr *tcp, unsigned int datlen)
 	tcp->ip.len = htons(sizeof(TCPhdr) + datlen - sizeof(EtherNetII));
 
 	tcp->ip.chksum = 0;
-	tcp->ip.chksum = htons(checksum((unsigned char *)tcp + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), 0));
-
 	tcp->chksum = 0;
-	tcp->chksum = htons(checksum((unsigned char *)tcp->ip.source, 0x08 + 0x14 + datlen, 2));
+
+	tcp->ip.chksum = htons(checksum((uint8_t *)tcp + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), CK_IP));
+	tcp->chksum = htons(checksum(&tcp->ip.source, 0x08 + 0x14 + datlen, CK_TCP));
 
 	return tx_packet(tcp, sizeof(TCPhdr) + datlen);
  }

@@ -235,7 +235,7 @@ void add32(uint8_t *op32, uint16_t op16);
 * Returns:
 *   16 bit checksum.
 *******************************************************************************/
-uint16_t checksum(uint8_t *buf, uint16_t len, enum cksum_types type);
+uint16_t checksum(void *buffer, uint16_t len, enum cksum_types type);
 
 /*******************************************************************************
 * Function Name: SetupBasicIPPacket

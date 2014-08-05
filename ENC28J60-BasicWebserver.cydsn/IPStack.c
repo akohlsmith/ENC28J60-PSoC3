@@ -78,35 +78,29 @@ void add32(uint8_t *op32, uint16_t op16)
 * Function Name: checksum
 ********************************************************************************
 * Summary:
-*   Computes the checksum for UDP,TCP or IP as specified by the type parameter.
+*   Computes the checksum for UDP, TCP or IP as specified by the type parameter.
 *   Sequence and Ack numbers during an HTTP transaction.
-*   **Clear the checksum fields in the appropriate packets,before calculating.
+*   **Clear the checksum fields in the appropriate packets before calculating.
 *
 * Parameters:
-*   buf - pointer to the data structure over which the checksum must be calc'd.
-*   For ICMP or IP Checksums(type 0),pointer should point to the start of
-*   the IP header.
-*   For TCP(type 2)/UDP(type 1),pointer should point to
-*   the sourceIP field in the IPheader.
+*   buffer - pointer to the data structure over which the checksum must be calc'd.
+*   For ICMP or IP Checksums, pointer should point to the start of the IP header.
+*   For TCP or UDP, the pointer should point to the sourceIP field in the IPheader.
 *
 *   len - length of the data structure over which checksum must be calc'd.
-*   For ICMP or IP Checksums(type 0),it should be size of ONLY IP header part.
+*   For ICMP or IP Checksums, it should be size of ONLY IP header part.
 *   That can be computed by sizeof(IPhdr) - sizeof(EtherNetII).
-*   For TCP(type 2)/UDP(type 1),it should be UDP or TCP header plus 8,because
-*   the source IP and destination IP(which are part of the checksum's pseudoheader)
-*   are 4bytes long each.
-*
-*   type - The Type of checksum we require,
-*           0 for IP/ICMP checksums
-*           1 for UDP checksums
-*           2 for TCP checksums
+*   For TCP or UDP it should be UDP or TCP header plus 8, because
+*   the source IP and destination IP (which are part of the checksum's pseudoheader)
+*   are 4 bytes long each.
 *
 * Returns:
 *   16 bit checksum.
-*   This function is taken from the TUXGraphics network stack,due to its elegance.
+*   This function is taken from the TUXGraphics network stack, due to its elegance.
 *******************************************************************************/
-uint16_t checksum(uint8_t *buf, uint16_t len, enum cksum_types type)
+uint16_t checksum(void *buffer, uint16_t len, enum cksum_types type)
 {
+	uint8_t *buf = buffer;
 	uint32_t sum;
 
 	sum = 0;
@@ -404,13 +398,11 @@ int ackTcp(TCPhdr *tcp, uint16_t len, enum tcp_flags flags)
 	tcp->chksum = 0;
 	tcp->ip.chksum = 0;
 
-	/* Swap the MACs in the ETH header */
-	memcpy(tcp->ip.eth.DestAddrs, tcp->ip.eth.SrcAddrs, 6);
-	memcpy(tcp->ip.eth.SrcAddrs, deviceMAC, 6);
-
-	/* Swap the IP Addresses in the IP header */
-	memcpy(tcp->ip.dest, tcp->ip.source, 4);
-	memcpy(tcp->ip.source, deviceIP, 4);
+	/* Swap the hardware and protocol addresses in the headers */
+	memcpy(tcp->ip.eth.DestAddrs, tcp->ip.eth.SrcAddrs, sizeof(macaddr_t));
+	memcpy(tcp->ip.eth.SrcAddrs, deviceMAC, sizeof(macaddr_t));
+	memcpy(tcp->ip.dest, tcp->ip.source, sizeof(ipaddr_t));
+	memcpy(tcp->ip.source, deviceIP, sizeof(ipaddr_t));
 
 	/* Swap the Ports in the TCP header */
 	destPort = tcp->destPort;
@@ -421,7 +413,6 @@ int ackTcp(TCPhdr *tcp, uint16_t len, enum tcp_flags flags)
 	memcpy(ack, tcp->ackNo, sizeof(ack));
 	memcpy(tcp->ackNo, tcp->seqNo, sizeof(ack));
 	memcpy(tcp->seqNo, ack, sizeof(ack));
-
 
 	/* Increment Ack Number if its a SYN, or FIN(ACK) packet. If not, fill it accordingly. */
 	if (tcp->SYN || (tcp->FIN && !tcp->PSH)) {
@@ -436,8 +427,7 @@ int ackTcp(TCPhdr *tcp, uint16_t len, enum tcp_flags flags)
 	}
 
 	/*
-	 * If its supposed to be a SYNACK packet,then add MSS option.
-	 * MSS = Maximum segment size
+	 * If its supposed to be a SYNACK packet, add the MSS option.
 	 * If not, then set the appropriate value in the length field of TCP
 	 * and dont add any options.
 	 */
@@ -448,12 +438,12 @@ int ackTcp(TCPhdr *tcp, uint16_t len, enum tcp_flags flags)
 		*datptr++ = 0x04;
 		*datptr++ = HI8(300);
 		*datptr++ = LO8(300);
-		tcp->hdrLen = 0x06;	/* 6 because its length is 24 bytes. Multiples of 4 bytes. */
+		tcp->hdrLen = 6;	/* 6 because its length is 24 bytes. Multiples of 4 bytes. */
 		dlength += 4;		/* MSS option is 4 bytes, so length of (data) options = 4. */
 
 	} else {
 		tcp->SYN = 0;
-		tcp->hdrLen = 0x05;	/* 5 because its length is 20 bytes. Multiples of 4 bytes. */
+		tcp->hdrLen = 5;	/* 5 because its length is 20 bytes. Multiples of 4 bytes. */
 	}
 
 	/* set up the flags */
@@ -469,8 +459,8 @@ int ackTcp(TCPhdr *tcp, uint16_t len, enum tcp_flags flags)
 	tcp->ip.len = htons(len - sizeof(EtherNetII));
 
 	/* Compute the checksums */
-	tcp->ip.chksum = htons(checksum((unsigned char *)tcp + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), 0));
-	tcp->chksum = htons(checksum((unsigned char *)tcp->ip.source, 0x08 + 0x14 + dlength, 2));
+	tcp->ip.chksum = htons(checksum((uint8_t *)tcp + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), CK_IP));
+	tcp->chksum = htons(checksum(&tcp->ip.source, 0x08 + 0x14 + dlength, CK_TCP));
 
 	return tx_packet(tcp, len);
 }
