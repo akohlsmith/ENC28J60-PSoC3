@@ -509,6 +509,12 @@ int IPstack_Start(const macaddr_t devMAC, const ipaddr_t devIP)
 		return FALSE;
 	}
 
+	dhcp_init();
+	dhcp_discover();
+	for (i=0; i< 0x5fff; i++) {
+		IPstackIdle();
+	}
+
 	/*Lets find the router's MAC address*/
 	SendArpRequest(routerIP);
 

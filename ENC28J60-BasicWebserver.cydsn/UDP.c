@@ -78,11 +78,16 @@ void UDP_ProcessIncoming(UDPPacket *udp)
 
 	data = (uint8_t *)udp + sizeof(UDPhdr);
 
+	if (ntohs(udp->udp.destPort) == 68) {
+		dhcp_process((DHCPhdr *)udp);
+
+	} else {
 		if(strncmp(data,"Invoke.",sizeof("Invoke."))==0){
 			UDPReply(udp,"Hello World",sizeof("Hello World"));
 		}else{
 			UDPReply(udp,"Access Denied.",sizeof("Access Denied."));
 		}
+	}
 }
 
 /* [] END OF FILE */
