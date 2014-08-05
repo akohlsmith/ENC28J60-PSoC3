@@ -220,7 +220,7 @@ void SetupBasicIPPacket(void *packet, enum proto_types proto, ipaddr_t destIP)
 	//ip->fragmentOffset1 = 0x00;
 	//ip->fragmentOffset2 = 0x00;
 	ip->ttl = 128;
-	ip->protocol = htons(proto);
+	ip->protocol = proto;
 }
 
 /*******************************************************************************
