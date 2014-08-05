@@ -66,68 +66,80 @@ int gethostbyname_simple(const uint8_t *name, ipaddr_t *addr)
 	dns->udp.ip.len = htons(len - sizeof(EtherNetII));
 
 	/*Calculate the UDP and IP Checksums*/
-	dns->udp.ip.chksum=checksum((unsigned char*)dns + sizeof(EtherNetII),sizeof(IPhdr) - sizeof(EtherNetII),0);
-	dns->udp.chksum=checksum((unsigned char*)dns->udp.ip.source,(len+8)-sizeof(IPhdr),1);
-	//(len+8) because Source IP and DestIP,which are part of the pseduoheader,are 4 bytes each.
+	dns->udp.ip.chksum = htons(checksum((uint8_t *)dns + sizeof(EtherNetII), sizeof(IPhdr) - sizeof(EtherNetII), CK_IP));
+	dns->udp.chksum = htons(checksum(&dns->udp.ip.source, len + 8 - sizeof(IPhdr), CK_UDP));
+	/* NOTE: len + 8 because Source IP and DestIP, which are part of the pseduoheader, are 4 bytes each.
 
 	/*Send the DNS Query packet*/
 	tx_packet(packet, len);
 
-	/*Now that we have sent the query,
-	  we wait for the reply,and then process it.*/
+	/* Now that we have sent the query, we wait for the reply and then process it. */
 
-	while(timeout--){
-		/*Wait for a packet of type UDP*/
-		if(GetPacket(PROTO_UDP, packet)!=1){
+	while (timeout--) {
+		UDPhdr *udp = (UDPhdr *)packet;
+
+		if (! GetPacket(PROTO_UDP, packet)) {
 			continue;
 		}
-		/*We got a UDP packet*/
-		/*Check if that packet is sent from port 53,
-		  i.e. its a DNS reply. */
-		if( ((UDPhdr*)packet)->sourcePort == (DNSUDPPORT)){
-		/*Yes,its a DNS Reply Packet.*/
+
+		if (ntohs(udp->sourcePort) == DNSUDPPORT) {
 			dns = (DNShdr*)packet;
-			/*Check if its our ID,and there are no errors.*/
-			if ( (dns->id == (0xbaab)) && ((dns->flags && 0x008F)!=0x0080)){
-			/*Yes,it is error free,and our DNS Reply.Lets extract the IP*/
-				dnsq=packet+len;
-				/*Lets go into a loop to browse through the returned resources.*/
-				for(;;){
-					if(*dnsq==0xC0){//Is it a pointer?
-						dnsq+=2;
-					}else{
-						/*we just search for the first, zero=root domain
-						all other octets must be non zero*/
-						while (++dnsq < packet+len ) {
-							if(*dnsq == 0){
+
+			/* does the ID match and there were no DNS errors? */
+			if ((ntohs(dns->id) == 0xbaab) && ((ntohs(dns->flags) && 0x008F) != 0x0080)) {
+				dnsq = packet + len;
+
+				/* Lets go into a loop to browse through the returned resources. */
+				for(;;) {
+					if (*dnsq == 0xC0) {	/* PTR? */
+						dnsq += 2;
+					} else {
+						/*
+						 * we just search for the first, zero=root domain
+						 * all other octets must be non zero
+						 */
+						while (++dnsq < packet + len) {
+							if (*dnsq == 0) {
 								++dnsq;
 								break;
 							}
-						}
+						};
 					}
-					/* There might be multipe records in the answer.
-					   We are searching for an 'A' record (contains IP Address).*/
-					if (dnsq[1] == 1 && dnsq[9] == 4) { /*Check if type "A" and IPv4*/
-						/*Aha! We have our IP!.Lets save it to the global variable serverIP*/
-						memcpy( serverIP, dnsq+10, sizeof(serverIP));
-						if(serverIP[0]==0){
+
+					/*
+					 * There might be multipe records in the answer.
+					 * We are searching for an 'A' record (contains IP Address).
+					 */
+					if (dnsq[1] == 1 && dnsq[9] == 4) { /* Check if type "A" and IPv4 */
+						/* found an IPv4 address for the name */
+						memcpy(addr, dnsq + 10, sizeof(ipaddr_t));
+
+						if(addr[0] == 0) {
 							return FALSE;
 						} else {
 							return TRUE;
 						}
+
 						break;
 					}
-					/*Advance pointer to browse the remaining records,since we
-					  havent got the right one with an IP*/
+
+					/*
+					 * Advance pointer to browse the remaining records
+					 * since we havent got the right one with an IP
+					 */
 					dnsq += dnsq[9] + 10;
-				}//for loop to browse records
+				} //for loop to browse records
 
 				break;
-			}else{
-				return(FALSE);
+
+			/* this is either not a DNS response for our query, or it's a bad response */
+			} else {
+				return FALSE;
 			}
 		}
-	}//Outer Packet waiting while loop
-	return(FALSE);
+	}; /* while(timeout) */
+
+	return FALSE;
 }
+
 /* [] END OF FILE */
