@@ -86,7 +86,7 @@ int gethostbyname_simple(const uint8_t *name, ipaddr_t *addr)
 			dns = (DNShdr*)packet;
 
 			/* does the ID match and there were no DNS errors? */
-			if ((ntohs(dns->id) == 0xbaab) && ((ntohs(dns->flags) && 0x008F) != 0x0080)) {
+			if ((ntohs(dns->id) == 0xbaab) && ((ntohs(dns->flags) & 0x008F) != 0x0080)) {
 				dnsq = packet + len;
 
 				/* Lets go into a loop to browse through the returned resources. */
