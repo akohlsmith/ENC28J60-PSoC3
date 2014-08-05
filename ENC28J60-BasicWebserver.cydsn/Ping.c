@@ -24,7 +24,7 @@
 *   TRUE(0)- if the Ping Reply was successfully sent.
 *   FALSE(1) - if the Ping Reply was not successful in transmission.
 *******************************************************************************/
-void PingReply(ICMPhdr* ping, uint16_t len)
+int PingReply(ICMPhdr* ping, uint16_t len)
 {
 	if (ping->type == ICMPREQUEST) {
 		ping->type = ICMPREPLY;
@@ -43,6 +43,8 @@ void PingReply(ICMPhdr* ping, uint16_t len)
 
 		return tx_packet(ping, len);
 	}
+
+	return 0;
 }
 
 /*******************************************************************************

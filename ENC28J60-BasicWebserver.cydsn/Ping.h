@@ -25,7 +25,7 @@
 *   TRUE(0)- if the Ping Reply was successfully sent.
 *   FALSE(1) - if the Ping Reply was not successful in transmission.
 *******************************************************************************/
-void PingReply(ICMPhdr* ping, uint16_t len);
+int PingReply(ICMPhdr* ping, uint16_t len);
 
 /*******************************************************************************
 * Function Name: SendPing
