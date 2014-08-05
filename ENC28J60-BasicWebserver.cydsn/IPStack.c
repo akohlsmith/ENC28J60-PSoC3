@@ -168,7 +168,7 @@ uint16_t checksum(void *buffer, uint16_t len, enum cksum_types type)
 * Summary:
 *   Swaps the Source,Destination MAC and IP Addresses,
 *   Populates the various other fields of an IP header,
-*   zero-ing the checksum field.It does not set length.
+*   zero-ing the checksum field. It does not set length.
 *
 * Parameters:
 *   packet - pointer to the packet data structure to be populated.
@@ -180,31 +180,47 @@ uint16_t checksum(void *buffer, uint16_t len, enum cksum_types type)
 *******************************************************************************/
 void SetupBasicIPPacket(void *packet, enum proto_types proto, ipaddr_t destIP)
 {
+	IPhdr *ip;
+	uint32_t len;
+
+	/* determine length of packet header */
+	if (proto == PROTO_TCP) {
+		len = sizeof(TCPhdr);
+	} else if (proto == PROTO_UDP) {
+		len = sizeof(UDPhdr);
+	} else if (proto == PROTO_ICMP) {
+		len = sizeof(ICMPhdr);
+	} else {
+		/* TODO: invalid prototype, what to do? */
+		return;
+	}
+
+	/* zero out the packet header */
+	memset(packet, 0, len);
+
 	/* Structure the data buffer(packet) as an IP header */
-	IPhdr *ip = (IPhdr *)packet;
+	ip = (IPhdr *)packet;
 
 	/* ETH type is an IP packet */
 	ip->eth.type = htons(PKT_IP);
 
 	/* Set the MAC Addresses in the ETH header */
-	memcpy(ip->eth.DestAddrs, routerMAC, sizeof(routerMAC));
-	memcpy(ip->eth.SrcAddrs, deviceMAC, sizeof(deviceMAC));
+	memcpy(ip->eth.DestAddrs, routerMAC, sizeof(macaddr_t));
+	memcpy(ip->eth.SrcAddrs, deviceMAC, sizeof(macaddr_t));
 
 	/* Set the IP Addresses in the IP header */
-	memcpy(ip->source, deviceIP, sizeof(deviceIP));
-	memcpy(ip->dest, destIP, sizeof(deviceIP));
+	memcpy(ip->source, deviceIP, sizeof(ipaddr_t));
+	memcpy(ip->dest, destIP, sizeof(ipaddr_t));
 
 	/* Fill up the rest of the fields */
 	ip->version = 0x4;
 	ip->hdrlen = 0x5;
-	ip->diffsf = 0;
 	ip->ident = 2;	/* Random */
 	ip->flags = htons(0x4000);
 	//ip->fragmentOffset1 = 0x00;
 	//ip->fragmentOffset2 = 0x00;
 	ip->ttl = 128;
 	ip->protocol = htons(proto);
-	ip->chksum = 0;
 }
 
 /*******************************************************************************
